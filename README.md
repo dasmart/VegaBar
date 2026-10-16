@@ -77,13 +77,13 @@ brew install --cask dasmart/tap/vegabar
 
 ## Pairing a light
 
-VegaBar pairs with the light directly, so the light has to leave the phone app's network first.
+A Zhiyun light can be paired with only one controller at a time, so it has to leave the phone app's network before VegaBar can pair with it.
 
-1. In the ZY Vega app, unpair the light (or factory-reset it from the light's own menu).
+1. **Reset the light's pairing:** press the light's power button three times quickly. (You can also unpair it from inside the ZY Vega app.) The light is now in pairing mode.
 2. Click the VegaBar icon and choose **Pair a light…**. The light appears within a few seconds.
 3. Click **Pair**. The light blinks while it's being identified, then shows up in the menu.
 
-A light paired with VegaBar won't be visible to the phone app until you unpair it again (from the ⋯ menu next to its name). Pairing state is kept in `~/Library/Application Support/VegaBar`; back that folder up if you don't want to factory-reset the light after moving to a new Mac.
+To go back to the phone app later, either unpair the light from VegaBar (the ⋯ menu next to its name) or triple-click its power button again, then pair it in the phone app. Pairing state is kept in `~/Library/Application Support/VegaBar`; back that folder up if you don't want to factory-reset the light after moving to a new Mac.
 
 ## Tips
 
