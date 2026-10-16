@@ -117,6 +117,8 @@ final class ZYLink: NSObject {
 
     /// The connected light's CoreBluetooth identifier, or nil if not connected.
     var connectedPeripheralId: UUID? { state == .connected ? peripheral?.identifier : nil }
+    /// The connected light's Bluetooth name (for example "PL103_8723"), or nil.
+    var connectedPeripheralName: String? { state == .connected ? peripheral?.name : nil }
 
     /// `unfiltered` scans every advertiser (used while pairing, and logged) in case a
     /// light's advertisement doesn't list the mesh service UUIDs where macOS filters.

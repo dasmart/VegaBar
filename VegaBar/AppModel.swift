@@ -271,6 +271,8 @@ final class AppModel {
             isPairing = false
         }
         ensureDeviceId()
+        // The reply names the light by its product, as the phone app does.
+        link.send(ZYProtocol.getDeviceInfo())
         refreshState()
         startBatteryPolling()
         onConnected?()
@@ -304,6 +306,21 @@ final class AppModel {
             Log.info(.pairing, "no usable device id reply; registering")
             self.registerSelected()
         }
+    }
+
+    /// Renames the connected light to its product name ("MOLUS G60_8723")
+    /// if it still carries its Bluetooth name ("PL103_8723") or the table's
+    /// version of the product name. A name the user chose is never replaced.
+    private func applyProductName(model: String?) {
+        guard let btName = link.connectedPeripheralName, let light = selected,
+              let node = mesh.pairedNodes.first(where: { $0.uuid == light.id }),
+              let newName = LightNaming.displayName(bluetoothName: btName, model: model),
+              newName != light.name else { return }
+        let automatic = [btName, LightNaming.displayName(bluetoothName: btName)].compactMap { $0 }
+        guard automatic.contains(light.name) else { return }
+        mesh.rename(node: node, to: newName)
+        Log.info(.pairing, "named \(btName) \(newName)")
+        reloadLights()
     }
 
     private func nextFreeDeviceId() -> UInt16 {
@@ -363,6 +380,10 @@ final class AppModel {
             case .voltage(let id, let percent) where id == selectedZyId:
                 // The PL103 reports 101 for "unknown" (mains power).
                 battery = (0...100).contains(percent) ? percent : nil
+            case .deviceInfo(let info):
+                Log.info(.pairing, "connected light device info: \(info)")
+                // Order: serial, codename, model, spec. Only the model is used.
+                applyProductName(model: info.count > 2 ? info[2] : nil)
             case .deviceId(let id):
                 Log.info(.pairing, "connected light reports device id \(String(format: "0x%04X", id))")
                 if let l = lights.first(where: { $0.zyId == id }) {
@@ -396,7 +417,11 @@ final class AppModel {
         case .done(let address):
             reloadLights()
             guard let node = mesh.pairedNodes.first(where: { $0.primaryUnicastAddress == address }) else { break }
-            if node.name == nil, let name = pairingPeripheral?.name { mesh.rename(node: node, to: name) }
+            if let name = pairingPeripheral?.name, node.name == nil || node.name == name {
+                // Product name from the table now; the device info read on
+                // connect can refine it.
+                mesh.rename(node: node, to: LightNaming.displayName(bluetoothName: name) ?? name)
+            }
             selectedId = node.uuid
             pendingRegistration = (node.uuid, nextFreeDeviceId())
             pairingStatus = "Registering light…"

@@ -61,7 +61,7 @@ enum LightSafety {
         case .brightness, .brightnessMode, .colorTemp: return 0.1   // ≤ 10 changes per second
         case .power: return 1.0                     // ≤ 1 on/off cycle per second
         case .identify, .register, .removeDevice: return 2.0   // one-off actions
-        case .voltageById, .getDeviceId: return nil
+        case .voltageById, .getDeviceId, .deviceInfo: return nil
         }
     }
 
@@ -156,6 +156,8 @@ enum LightSafety {
         .voltageById: Rule(payloadLength: 2) { p in checkDevice(p) ?? .allowed },
         // Ask the connected light for its id: no payload.
         .getDeviceId: Rule(payloadLength: 0) { _ in .allowed },
+        // Ask the connected light for its device info (model name): no payload.
+        .deviceInfo: Rule(payloadLength: 0) { _ in .allowed },
         // Register: id, group. VegaBar only ever uses the default group 0.
         .register: Rule(payloadLength: 4) { p in
             if let v = checkDevice(p) { return v }

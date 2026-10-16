@@ -105,4 +105,5 @@ ZYLightParser::OnDataReceived 0x18fb1c; BaseClient::SendPacket(CommandMessage) 0
 - **0x1008 is power enable, not sleep:** `1` = on, `0` = off, for both set and read. The SDK calls it "sleep", but the app's caller (`DeviceManagerRepository.D`, logged as "执行enable") passes `true` for on. Confirmed on hardware.
 - A light whose pairing stopped after mesh provisioning reports device id `0x0000` to `0x2005`. Sending `register` (0x0006) then works, and the light acknowledges with status `00`.
 - Set commands (rw=1) get no reply. Read commands do.
+- `0x2003` device info on a PL103 returns seven NUL-terminated strings: a 16-hex-digit serial, the codename `pl103`, then five empty strings. The model field is empty, so the product name the phone app shows ("MOLUS G60") is not stored on the light. The app must map the code itself. VegaBar keeps its own table in `LightNaming`.
 - Pacing, as implemented in VegaBar after review: writes of 0x1001/0x1002 ≥ 100 ms apart, 0x1008 ≥ 1 s apart, 0x1101/0x0006/0x0003 ≥ 2 s apart; reads unpaced; ≤ 20 frames/s overall. These are VegaBar's own limits, not requirements of the light.

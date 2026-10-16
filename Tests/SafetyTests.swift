@@ -32,6 +32,7 @@ final class SafetyTests: XCTestCase {
         XCTAssertEqual(LightSafety.validate(ZYProtocol.register(device: device)), .allowed)
         XCTAssertEqual(LightSafety.validate(ZYProtocol.removeDevice(device: device)), .allowed)
         XCTAssertEqual(LightSafety.validate(ZYProtocol.getDeviceId()), .allowed)
+        XCTAssertEqual(LightSafety.validate(ZYProtocol.getDeviceInfo()), .allowed)
     }
 
     func testRejectsOutOfRangeValues() {

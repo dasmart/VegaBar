@@ -18,6 +18,9 @@ enum ZYReply: Equatable {
     /// The connected light's own ZY device id (0x2005). 0x0000 means the light
     /// was never registered.
     case deviceId(UInt16)
+    /// The connected light's device info (0x2003): NUL-separated strings, in the
+    /// order serial number, internal codename, model, hardware spec.
+    case deviceInfo([String])
     /// Any frame VegaBar doesn't interpret, kept so callers can log it.
     case other(cmd: UInt16, payload: Data)
 }
@@ -68,6 +71,9 @@ enum ZYProtocol {
         case voltageById = 0x1201
         /// Asks the GATT-connected light (no id needed) for its own device id.
         case getDeviceId = 0x2005
+        /// Asks the GATT-connected light for its serial, codename, model and spec.
+        /// The phone app reads this during pairing.
+        case deviceInfo = 0x2003
     }
 
 
@@ -135,6 +141,8 @@ enum ZYProtocol {
     static func removeDevice(device: UInt16) -> Data { frame(.removeDevice, payload: u16(device)) }
     /// Asks the connected light for its ZY device id (0x2005, empty payload).
     static func getDeviceId() -> Data { frame(.getDeviceId, payload: []) }
+    /// Asks the connected light for its device info (0x2003, empty payload).
+    static func getDeviceInfo() -> Data { frame(.deviceInfo, payload: []) }
 
     // MARK: - Framing
 
@@ -250,6 +258,12 @@ enum ZYProtocol {
             return .voltage(id: u16(0), percent: Int(p[2]))
         case .getDeviceId where p.count >= 2:
             return .deviceId(u16(0))
+        // A read request has no payload, so an empty one is never a reply.
+        case .deviceInfo where !p.isEmpty:
+            let strings = p.split(separator: 0, omittingEmptySubsequences: false)
+                .map { String(decoding: $0, as: UTF8.self).trimmingCharacters(in: .whitespaces) }
+            // Drop the empty piece after the final NUL.
+            return .deviceInfo(strings.last == "" ? Array(strings.dropLast()) : strings)
         default:
             return other
         }

@@ -33,6 +33,8 @@ final class ProtocolTests: XCTestCase {
                     equals: "24 3C 08 00 00 01 07 00 01 11 00 80 4F E3")
         assertFrame(seq: 8, { ZYProtocol.getDeviceId() },
                     equals: "24 3C 06 00 00 01 08 00 05 20 05 F4")
+        assertFrame(seq: 9, { ZYProtocol.getDeviceInfo() },
+                    equals: "24 3C 06 00 00 01 09 00 03 20 17 28")
         assertFrame(seq: 10, { ZYProtocol.register(device: device) },
                     equals: "24 3C 0A 00 00 01 0A 00 06 00 00 80 00 00 E4 CC")
         assertFrame(seq: 11, { ZYProtocol.removeDevice(device: device) },
@@ -52,6 +54,28 @@ final class ProtocolTests: XCTestCase {
         XCTAssertEqual(Array(hot)[13...14], [0x64, 0x19])   // 6500 little-endian
         let bright = ZYProtocol.setBrightness(device: device, percent: 150)
         XCTAssertEqual(LightSafety.validate(bright), .allowed)
+    }
+
+    func testDecodesDeviceInfoStrings() {
+        let payload = Array("SN123\0PL103\0MOLUS G60\0spec\0".utf8)
+        XCTAssertEqual(ZYProtocol.decode(cmd: 0x2003, payload: payload),
+                       .deviceInfo(["SN123", "PL103", "MOLUS G60", "spec"]))
+        // An empty payload is our own request echoed, not a reply.
+        XCTAssertEqual(ZYProtocol.decode(cmd: 0x2003, payload: []), .other(cmd: 0x2003, payload: Data()))
+    }
+
+    func testProductNames() {
+        // From the table when no model was read.
+        XCTAssertEqual(LightNaming.displayName(bluetoothName: "PL103_8723"), "MOLUS G60_8723")
+        // The light's reported model wins, upper-cased like the phone app.
+        XCTAssertEqual(LightNaming.displayName(bluetoothName: "PL103_8723", model: "Molus G60"), "MOLUS G60_8723")
+        XCTAssertEqual(LightNaming.displayName(bluetoothName: "PL200_0001", model: "Molus X100"), "MOLUS X100_0001")
+        // A model that only repeats the code falls back to the table.
+        XCTAssertEqual(LightNaming.displayName(bluetoothName: "PL103_8723", model: "pl103"), "MOLUS G60_8723")
+        // Unknown code and no model, or a name without a suffix: keep the Bluetooth name.
+        XCTAssertNil(LightNaming.displayName(bluetoothName: "PL999_0001"))
+        XCTAssertNil(LightNaming.displayName(bluetoothName: "PL103"))
+        XCTAssertNil(LightNaming.displayName(bluetoothName: "PL103_"))
     }
 
     func testDecodesRealRepliesFromThePL103() {
