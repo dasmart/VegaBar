@@ -8,9 +8,9 @@ Control your Zhiyun light from the Mac menubar.
 
 VegaBar is a small, native macOS app for Zhiyun's Bluetooth lights — the ones the ZY Vega phone app controls. It lives in the menubar, pairs directly with the light, and gives you power, brightness and colour temperature a click, a keystroke, a Shortcut or a shell command away. No phone, no cloud, no account.
 
-I use a Zhiyun Molus G60 as a studio light in my home office, and it ticked me off that the only way to control it was to pick up my phone. There was no Mac app. So our mutual friend Claude and I decompiled the Android app, worked out the Bluetooth protocol, and built this in a few hours. It's been in daily use since.
+I use a Zhiyun Molus G60 as a studio light in my home office, and it ticked me off that the only way to control it was to pick up my phone. There was no Mac app. So our mutual friend Claude and I decompiled the Android app, worked out the Bluetooth protocol, and built this in a few hours.
 
-Requires macOS 14 or later; runs on Apple silicon and Intel.
+Requires macOS 14 or later; runs on Apple silicon and maybe Intel.
 
 > VegaBar is an independent project, not affiliated with or endorsed by Zhiyun.
 
@@ -37,6 +37,7 @@ If you try it with something else, please open an issue and say what happened, e
 **Hotkeys.** Record global shortcuts for power, brightness up and down, and warmer and cooler, and choose how big each step is. They work from any app.
 
 **Automations.**
+
 - *Camera:* turn the light on whenever a camera is in use — FaceTime, Zoom, Meet, anything — optionally with a preset, and off again when the call ends. It restores whatever you had before.
 - *Follow the Mac:* turn the light off when the Mac sleeps or the screen locks, and back on when you return.
 - *Time of day:* drift from a cool daytime colour temperature to a warm evening one, blended over an hour at each end. Moving the slider yourself pauses it until the next transition.
@@ -69,6 +70,7 @@ It launches VegaBar if it isn't running, and the exit status tells you whether t
 **Download:** get `VegaBar.zip` from the [latest release](../../releases/latest), unzip it, and move `VegaBar.app` to your Applications folder.
 
 Releases aren't notarized yet, so macOS will refuse to open the app the first time:
+
 1. Double-click VegaBar. macOS says it can't verify the app. Click **Done**.
 2. Open **System Settings › Privacy & Security**, scroll down, and click **Open Anyway** next to the VegaBar message.
 3. Confirm, then allow Bluetooth access when asked.
