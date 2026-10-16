@@ -199,7 +199,7 @@ struct MenuView: View {
                     Image(systemName: light.id == model.selected?.id ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(light.id == model.selected?.id ? Color.accentColor : .secondary)
                     if renaming == light {
-                        TextField("Name", text: $newName, onCommit: {
+                        TextField("Name in VegaBar", text: $newName, onCommit: {
                             model.rename(light, to: newName)
                             renaming = nil
                         })
@@ -211,7 +211,10 @@ struct MenuView: View {
                     Menu {
                         // Select first so the blink goes to this light.
                         Button("Identify (blink)") { model.select(light); model.identify() }
-                        Button("Rename…") { newName = light.name; renaming = light }
+                        // The ZY protocol has no command to store a name on the
+                        // light, so this only changes VegaBar's label for it.
+                        Button("Rename in VegaBar…") { newName = light.name; renaming = light }
+                            .help("Changes the name VegaBar shows. The light keeps its own Bluetooth name.")
                         Divider()
                         Button("Unpair…", role: .destructive) { confirmUnpair(light) }
                     } label: {

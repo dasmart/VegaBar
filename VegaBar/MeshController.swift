@@ -50,6 +50,10 @@ final class MeshController: NSObject {
     /// The peripheral being paired. The proxy bearer reconnects to it by identifier
     /// after the light reboots.
     private var pairingPeripheralId: UUID?
+    /// Fails the pairing if the light never identifies itself as a proxy.
+    private var proxyWaitTask: Task<Void, Never>?
+    /// True once the config messages have started, so they're sent only once.
+    private var configStarted = false
     /// Set once provisioning completes. Its presence tells `bearer(_:didClose:)`
     /// that the provisioning link closing is expected, not a failure.
     private var provisionedAddress: Address?
@@ -70,6 +74,8 @@ final class MeshController: NSObject {
         }
         super.init()
         manager.logger = self
+        // Tells us when the connected proxy has been identified (see `proxyReady`).
+        manager.proxyFilter.delegate = self
         loadOrCreateNetwork()
     }
 
@@ -168,6 +174,8 @@ final class MeshController: NSObject {
 
     /// Abandons any pairing in progress and closes both bearers.
     func cancelPairing() {
+        proxyWaitTask?.cancel()
+        proxyWaitTask = nil
         pbBearer?.close()
         proxyBearer?.close()
         pbBearer = nil
@@ -189,6 +197,8 @@ final class MeshController: NSObject {
 
     /// Closes both bearers and reports the failure.
     private func fail(_ message: String) {
+        proxyWaitTask?.cancel()
+        proxyWaitTask = nil
         pbBearer?.close()
         proxyBearer?.close()
         pbBearer = nil
@@ -200,6 +210,7 @@ final class MeshController: NSObject {
     /// service; connect to it and push the configuration the Android app sends.
     private func connectProxyForConfiguration() {
         guard let id = pairingPeripheralId else { return }
+        configStarted = false
         step = .configuring("Connecting to light…")
         // Connect by peripheral identifier rather than by scanning for the
         // proxy advertisement.
@@ -213,6 +224,34 @@ final class MeshController: NSObject {
         bearer.open()
     }
 
+    /// The proxy link is open, but NordicMesh refuses to send to the light until
+    /// it has identified it as a proxy: the light sends a network beacon, the
+    /// library sets up the proxy filter, and the light answers. Sending before
+    /// that fails with "No GATT Proxy Node is connected". So wait for the
+    /// filter's answer (`proxyReady`), giving up after 15 s.
+    private func waitForProxyThenConfigure() {
+        step = .configuring("Waiting for light…")
+        if manager.proxyFilter.proxy != nil {
+            configure()
+            return
+        }
+        proxyWaitTask?.cancel()
+        proxyWaitTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(15))
+            guard let self, !Task.isCancelled, !self.configStarted, self.proxyBearer != nil else { return }
+            self.fail("The light didn't respond after pairing. Turn it off and on, then try again.")
+        }
+    }
+
+    /// Called when the proxy filter reports back, which means the connected
+    /// light is now known to NordicMesh as a proxy and config messages can go.
+    fileprivate func proxyReady() {
+        guard proxyBearer != nil, !configStarted, case .configuring = step,
+              manager.proxyFilter.proxy != nil else { return }
+        Log.info(.pairing, "proxy identified; configuring")
+        configure()
+    }
+
     /// Sends the configuration the Android app sends after provisioning, one
     /// acknowledged message at a time, then closes the proxy link and reports
     /// `.done`. `AppModel` then reconnects over FEE9 to register the device id.
@@ -223,6 +262,9 @@ final class MeshController: NSObject {
             fail("Provisioned node missing")
             return
         }
+        configStarted = true
+        proxyWaitTask?.cancel()
+        proxyWaitTask = nil
         Task { @MainActor in
             do {
                 step = .configuring("Reading composition…")
@@ -275,7 +317,7 @@ extension MeshController: GattBearerDelegate {
                     self.fail("Identify failed: \(error.localizedDescription)")
                 }
             } else if bearer === self.proxyBearer {
-                self.configure()
+                self.waitForProxyThenConfigure()
             }
         }
     }
@@ -298,6 +340,16 @@ extension MeshController: GattBearerDelegate {
                 self.fail("Light disconnected during configuration")
             }
         }
+    }
+}
+
+// MARK: - Proxy filter delegate
+
+extension MeshController: ProxyFilterDelegate {
+    /// Fires for every Filter Status from the proxy, including the first one,
+    /// which is when NordicMesh records the connected proxy.
+    nonisolated func proxyFilterUpdated(type: ProxyFilerType, addresses: Set<Address>) {
+        Task { @MainActor in self.proxyReady() }
     }
 }
 
