@@ -4,6 +4,10 @@ A native macOS menubar controller for Zhiyun's Bluetooth lights (the ones the ZY
 
 VegaBar is an independent project and is not affiliated with or endorsed by Zhiyun. The protocol was reverse-engineered from the behaviour of the official app; VegaBar contains no Zhiyun code.
 
+## Disclaimer
+
+VegaBar is provided as is, without warranty of any kind, and you use it entirely at your own risk. It drives your lights over a reverse-engineered protocol that the manufacturer has not documented or approved. The author accepts no responsibility for anything that happens as a result of using it: a light that stops working, a pairing you can't undo, a house fire, a ruined video call, or any other consequence of your own decisions. If you aren't comfortable with that, don't use it. See the [LICENSE](LICENSE) for the legal version.
+
 ## Install
 
 Requires macOS 14 or later. Apple silicon and Intel.
