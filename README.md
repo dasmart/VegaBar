@@ -83,6 +83,8 @@ Releases aren't notarized yet, so macOS will refuse to open the app the first ti
 brew install --cask dasmart/tap/vegabar
 ```
 
+The app arrives quarantined just like the download, so the same **Open Anyway** (or `xattr`) step applies the first time you open it. Homebrew no longer has a `--no-quarantine` option.
+
 ## Pairing a light
 
 A Zhiyun light can be paired with only one controller at a time, so it has to leave the phone app's network before VegaBar can pair with it.
