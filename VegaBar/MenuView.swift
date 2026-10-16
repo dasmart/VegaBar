@@ -265,7 +265,7 @@ struct MenuView: View {
             ForEach(model.unprovisioned.sorted { $0.rssi > $1.rssi }) { d in
                 HStack {
                     Image(systemName: "lightbulb")
-                    Text(d.name)
+                    Text(d.displayName)
                     Spacer()
                     Text("\(d.rssi) dBm").font(.caption2).foregroundStyle(.secondary)
                     Button("Pair") { model.pair(d) }.controlSize(.small)
@@ -279,7 +279,7 @@ struct MenuView: View {
                 ForEach(model.foreignLights.sorted { $0.rssi > $1.rssi }) { d in
                     HStack {
                         Image(systemName: "lightbulb.slash").foregroundStyle(.secondary)
-                        Text(d.name).foregroundStyle(.secondary)
+                        Text(d.displayName).foregroundStyle(.secondary)
                         Spacer()
                         Text("\(d.rssi) dBm").font(.caption2).foregroundStyle(.secondary)
                     }

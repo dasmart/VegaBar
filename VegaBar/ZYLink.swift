@@ -49,6 +49,9 @@ final class ZYLink: NSObject {
         var rssi: Int
         /// Prefer the GATT name, falling back to the advertised local name.
         var name: String { peripheral.name ?? (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? "ZY Light" }
+        /// The name to show: the product name the phone app uses
+        /// ("MOLUS G60_8723"), or the Bluetooth name if the code isn't known.
+        var displayName: String { LightNaming.displayName(bluetoothName: name) ?? name }
         /// Service UUIDs from both the advertised list and the service-data keys.
         /// Mesh lights may carry 1827/1828 as service data rather than in the list.
         private var services: Set<CBUUID> {
