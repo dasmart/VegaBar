@@ -82,8 +82,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// vegabar://on | off | toggle | brightness/40 | brightness/+10 | cct/5600 | preset/Call
+    /// vegabar://preferences[/general|automation|hotkeys|presets]
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
+            if url.host()?.lowercased() == "preferences" {
+                let tab: SettingsView.Tab = switch url.pathComponents.dropFirst().first?.lowercased() {
+                case "automation": .automation
+                case "hotkeys": .hotkeys
+                case "presets": .presets
+                default: .general
+                }
+                SettingsWindow.show(tab: tab)
+                continue
+            }
             guard let request = URLCommand.request(from: url) else {
                 Log.info(.app, "ignored URL \(url.absoluteString)")
                 continue

@@ -7,6 +7,10 @@ cd "$(dirname "$0")"
 xcodegen generate --quiet
 LOG=.build/xcodebuild-test.log
 mkdir -p .build
+# xcodebuild sometimes leaves the Debug test-host app running afterwards, where
+# it would steal the vegabar:// URL scheme from the real app. Clean it up.
+cleanup() { pkill -f "xcode-test/Build/Products/Debug/VegaBar.app" 2>/dev/null || true; }
+trap cleanup EXIT
 if xcodebuild test -project VegaBar.xcodeproj -scheme VegaBar -destination 'platform=macOS' \
      -derivedDataPath .build/xcode-test > "$LOG" 2>&1; then
   grep -E "Test Suite 'All tests'|Executed [0-9]+ tests" "$LOG" | tail -2

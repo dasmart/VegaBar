@@ -51,10 +51,9 @@ private struct GeneralSettings: View {
                 if model.lights.isEmpty { Text("No lights paired.").foregroundStyle(.secondary) }
                 ForEach(model.lights) { light in
                     HStack {
-                        TextField("Name", text: Binding(
-                            get: { names[light.id] ?? light.name },
-                            set: { names[light.id] = $0 }))
-                        .onSubmit { commitName(light) }
+                        NameField(placeholder: "Light name",
+                                  text: Binding(get: { names[light.id] ?? light.name }, set: { names[light.id] = $0 }),
+                                  onCommit: { commitName(light) })
                         Button("Rename") { commitName(light) }
                             .disabled((names[light.id] ?? light.name) == light.name)
                         Button("Identify") { model.select(light); model.identify() }
@@ -243,7 +242,6 @@ private struct PresetSettings: View {
     /// re-render the whole list; the name is saved on Return or when the field
     /// loses focus.
     @State private var drafts: [UUID: String] = [:]
-    @FocusState private var focusedName: UUID?
 
     var body: some View {
         Form {
@@ -284,16 +282,10 @@ private struct PresetSettings: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 let id = preset.wrappedValue.id
-                TextField("", text: Binding(
-                    get: { drafts[id] ?? preset.wrappedValue.name },
-                    set: { drafts[id] = $0 }), prompt: Text("Preset name"))
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.leading)   // the form would right-align it otherwise
-                    .font(.body.weight(.medium))
+                NameField(placeholder: "Preset name",
+                          text: Binding(get: { drafts[id] ?? preset.wrappedValue.name }, set: { drafts[id] = $0 }),
+                          onCommit: { commitName(id) })
                     .frame(maxWidth: 220)
-                    .focused($focusedName, equals: id)
-                    .onSubmit { commitName(id) }
-                    .onChange(of: focusedName) { old, _ in if old == id { commitName(id) } }
                 Spacer()
                 Button("Apply") { model.applyPreset(preset.wrappedValue) }
                     .disabled(!model.isConnected)
@@ -336,5 +328,54 @@ private struct PresetSettings: View {
 enum LogViewer {
     static func openConsole() {
         NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Console.app"))
+    }
+}
+
+/// A single-line text field with left-aligned text whether idle or editing.
+///
+/// SwiftUI's `TextField` inside a grouped `Form` on macOS right-aligns its idle
+/// text (the "value column" look of System Settings) and only honours
+/// `multilineTextAlignment` while editing, which looks like the text jumping.
+/// Wrapping `NSTextField` directly gives one consistent alignment, and the
+/// standard Edit-menu behaviour (select all, undo, paste) for free.
+struct NameField: NSViewRepresentable {
+    var placeholder: String
+    @Binding var text: String
+    /// Called on Return and when the field loses focus.
+    var onCommit: () -> Void
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField(string: text)
+        field.placeholderString = placeholder
+        field.bezelStyle = .roundedBezel
+        field.alignment = .left
+        field.lineBreakMode = .byTruncatingTail
+        field.usesSingleLineMode = true
+        field.font = .systemFont(ofSize: NSFont.systemFontSize, weight: .medium)
+        field.delegate = context.coordinator
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        // Don't fight the user: only push model text in while they aren't typing.
+        if field.currentEditor() == nil, field.stringValue != text { field.stringValue = text }
+        context.coordinator.parent = self
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: NameField
+        init(_ parent: NameField) { self.parent = parent }
+
+        func controlTextDidChange(_ note: Notification) {
+            guard let field = note.object as? NSTextField else { return }
+            parent.text = field.stringValue
+        }
+
+        func controlTextDidEndEditing(_ note: Notification) {
+            parent.onCommit()
+        }
     }
 }
