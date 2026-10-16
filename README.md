@@ -145,3 +145,7 @@ Every frame passes through `LightSafety` immediately before it's written over Bl
 ## Contributing
 
 Issues and pull requests are welcome. Run `./test.sh` before opening a PR; the CI workflow runs the same build and tests. If you have a different Zhiyun light, a log from Preferences › General › "Log Bluetooth frames to a file" is the most useful thing you can attach to an issue.
+
+## Icon
+
+The app icon is an original design (`Design/icon.svg`): a panel light with the warm-to-cool colour-temperature range over a slider. Render the asset catalog from it with any SVG rasteriser at 16–512 pt, 1x and 2x.

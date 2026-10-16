@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2f5e"/>
+      <stop offset="1" stop-color="#0e1128"/>
+    </linearGradient>
+    <radialGradient id="bloom" cx="0.5" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#ffd58a" stop-opacity="0.75"/>
+      <stop offset="0.45" stop-color="#ffb457" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffb457" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffb14a"/>
+      <stop offset="0.5" stop-color="#fff1d0"/>
+      <stop offset="1" stop-color="#cfeeff"/>
+    </linearGradient>
+    <linearGradient id="panelShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
+    </linearGradient>
+    <linearGradient id="track" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffb14a"/>
+      <stop offset="1" stop-color="#cfeeff"/>
+    </linearGradient>
+    <linearGradient id="knob" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d9dde8"/>
+    </linearGradient>
+  </defs>
+  <!-- macOS icon grid: 824pt rounded square centred on a 1024pt canvas -->
+  <rect x="100" y="100" width="824" height="824" rx="184" fill="url(#bg)"/>
+  <!-- light bloom behind the panel -->
+  <ellipse cx="512" cy="430" rx="400" ry="330" fill="url(#bloom)"/>
+  <!-- the panel light -->
+  <rect x="236" y="268" width="552" height="330" rx="56" fill="url(#panel)"/>
+  <rect x="236" y="268" width="552" height="330" rx="56" fill="url(#panelShade)"/>
+  <!-- bezel -->
+  <rect x="236" y="268" width="552" height="330" rx="56" fill="none" stroke="#0e1128" stroke-opacity="0.35" stroke-width="10"/>
+  <!-- slider bar: warm to cool, knob near the middle -->
+  <rect x="236" y="690" width="552" height="40" rx="20" fill="#0a0c1e" fill-opacity="0.55"/>
+  <rect x="236" y="690" width="340" height="40" rx="20" fill="url(#track)"/>
+  <circle cx="576" cy="710" r="46" fill="url(#knob)"/>
+  <circle cx="576" cy="710" r="46" fill="none" stroke="#0e1128" stroke-opacity="0.25" stroke-width="6"/>
+</svg>
