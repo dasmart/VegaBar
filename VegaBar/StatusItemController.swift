@@ -25,7 +25,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         // Transient: closes when the user clicks anywhere else.
         popover.behavior = .transient
         popover.delegate = self
-        popover.contentViewController = NSHostingController(rootView: MenuView(model: model))
+        let host = NSHostingController(rootView: MenuView(model: model))
+        // Keep the popover's size in step with the SwiftUI content. Without this
+        // the size is fixed at the first layout; the menu then grows (a light
+        // connects and the controls appear) inside a popover that doesn't, and
+        // the content is centered and clipped, header first.
+        host.sizingOptions = .preferredContentSize
+        popover.contentViewController = host
 
         if let button = item.button {
             button.target = self
