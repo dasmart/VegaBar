@@ -35,7 +35,7 @@ else
   codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" build/VegaBar.app
 fi
 codesign --verify --deep --strict build/VegaBar.app
-echo "Built build/VegaBar.app ($(lipo -archs build/VegaBar.app/Contents/MacOS/VegaBar)), signed by: $(codesign -dv build/VegaBar.app 2>&1 | grep -E '^Authority=' | head -1 | cut -d= -f2 || echo ad-hoc)"
+echo "Built build/VegaBar.app ($(lipo -archs build/VegaBar.app/Contents/MacOS/VegaBar)), signed by: $(codesign -dv --verbose=2 build/VegaBar.app 2>&1 | grep -E '^Authority=' | head -1 | cut -d= -f2 || echo ad-hoc)"
 if [ "${VEGABAR_ZIP:-0}" = "1" ]; then
   ditto -c -k --keepParent build/VegaBar.app build/VegaBar.zip
   echo "Zipped build/VegaBar.zip"
