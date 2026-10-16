@@ -1,0 +1,92 @@
+name: VegaBar
+options:
+  bundleIdPrefix: org.dasmart
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+packages:
+  NordicMesh:
+    url: https://github.com/NordicSemiconductor/IOS-nRF-Mesh-Library.git
+    from: 4.8.0
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: YES
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+targets:
+  VegaBar:
+    type: application
+    platform: macOS
+    sources:
+      - VegaBar
+      - Shared
+    dependencies:
+      - package: NordicMesh
+      - target: VegaBarCLI
+        embed: true
+        codeSign: false
+        copy:
+          destination: wrapper
+          subpath: Contents/Helpers
+    info:
+      path: VegaBar/Info.plist
+      properties:
+        CFBundleDisplayName: VegaBar
+        CFBundleShortVersionString: "0.3"
+        CFBundleVersion: "3"
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.utilities
+        NSBluetoothAlwaysUsageDescription: VegaBar uses Bluetooth to pair with and control your ZY lights.
+        CFBundleURLTypes:
+          - CFBundleURLName: org.dasmart.vegabar
+            CFBundleURLSchemes: [vegabar]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.dasmart.vegabar
+        PRODUCT_NAME: VegaBar
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_APP_SANDBOX: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # Surface data-race risks now so the move to Swift 6 language mode is small.
+        SWIFT_STRICT_CONCURRENCY: complete
+        # Collect UI strings into the String Catalog on each build.
+        SWIFT_EMIT_LOC_STRINGS: YES
+  VegaBarTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests
+    dependencies:
+      - target: VegaBar
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.dasmart.vegabar.tests
+        GENERATE_INFOPLIST_FILE: YES
+  VegaBarCLI:
+    type: tool
+    platform: macOS
+    sources:
+      - vegabar-cli
+      - Shared
+    settings:
+      base:
+        PRODUCT_NAME: vegabar
+        PRODUCT_MODULE_NAME: VegaBarCLI
+        PRODUCT_BUNDLE_IDENTIFIER: org.dasmart.vegabar.cli
+schemes:
+  VegaBar:
+    build:
+      targets:
+        VegaBar: all
+        VegaBarTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - VegaBarTests
+    archive:
+      config: Release

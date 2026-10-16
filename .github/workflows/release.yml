@@ -1,0 +1,101 @@
+name: Release
+
+# Builds a universal VegaBar.app for a version tag and attaches it to a GitHub
+# Release. Signing and notarization happen automatically when the Developer ID
+# secrets exist; without them the app is ad-hoc signed and users need
+# "Open Anyway" (documented in the README).
+#
+# Secrets for signed releases:
+#   DEVELOPER_ID_P12           base64 of the "Developer ID Application" .p12
+#   DEVELOPER_ID_P12_PASSWORD  its password
+#   NOTARY_KEY_ID              App Store Connect API key id
+#   NOTARY_ISSUER_ID           App Store Connect issuer id
+#   NOTARY_KEY                 base64 of the AuthKey_XXXX.p8 file
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    env:
+      HAVE_SIGNING: ${{ secrets.DEVELOPER_ID_P12 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Unit tests
+        run: ./test.sh
+
+      - name: Import Developer ID certificate
+        if: env.HAVE_SIGNING == 'true'
+        env:
+          P12: ${{ secrets.DEVELOPER_ID_P12 }}
+          P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          echo "$P12" | base64 --decode > cert.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import cert.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -1 | sed -E 's/.*"(.*)"/\1/')
+          echo "VEGABAR_SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+          echo "VEGABAR_TEAM_ID=$(echo "$IDENTITY" | sed -E 's/.*\(([A-Z0-9]+)\)$/\1/')" >> "$GITHUB_ENV"
+          rm cert.p12
+
+      - name: Build universal app
+        run: VEGABAR_ZIP=1 ./build-app.sh
+
+      - name: Notarize and staple
+        if: env.HAVE_SIGNING == 'true'
+        env:
+          NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          echo "$NOTARY_KEY" | base64 --decode > AuthKey.p8
+          xcrun notarytool submit build/VegaBar.zip --key AuthKey.p8 \
+            --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --wait
+          xcrun stapler staple build/VegaBar.app
+          ditto -c -k --keepParent build/VegaBar.app build/VegaBar.zip
+          rm AuthKey.p8
+
+      - name: Checksum
+        id: sum
+        run: |
+          SHA=$(shasum -a 256 build/VegaBar.zip | cut -d' ' -f1)
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "VegaBar.zip sha256: $SHA"
+
+      - name: Release notes
+        id: notes
+        env:
+          SHA256: ${{ steps.sum.outputs.sha256 }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          # The CHANGELOG section for this version, if there is one.
+          awk -v v="$VERSION" '
+            $0 ~ "^## " { printing = index($0, v) > 0 }
+            printing { print }' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "VegaBar $VERSION" > notes.md; fi
+          {
+            echo
+            echo "**SHA-256 of VegaBar.zip:** \`$SHA256\`"
+            if [ "$HAVE_SIGNING" != "true" ]; then
+              echo
+              echo "This build is not notarized: after unzipping, use System Settings › Privacy & Security › Open Anyway (see the README)."
+            fi
+          } >> notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/VegaBar.zip
+          body_path: notes.md

@@ -1,0 +1,312 @@
+import AppKit
+import SwiftUI
+
+/// The settings window: General, Automation, Hotkeys and Presets tabs.
+struct SettingsView: View {
+    /// Lets callers (e.g. the "+" preset button) open a specific tab.
+    enum Tab: Hashable { case general, automation, hotkeys, presets }
+    @State var tab: Tab
+
+    init(initialTab: Tab = .general) { _tab = State(initialValue: initialTab) }
+
+    var body: some View {
+        TabView(selection: $tab) {
+            GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }.tag(Tab.general)
+            AutomationSettings().tabItem { Label("Automation", systemImage: "wand.and.stars") }.tag(Tab.automation)
+            HotkeySettings().tabItem { Label("Hotkeys", systemImage: "keyboard") }.tag(Tab.hotkeys)
+            PresetSettings().tabItem { Label("Presets", systemImage: "slider.horizontal.3") }.tag(Tab.presets)
+        }
+        .frame(width: 540, height: 480)
+    }
+}
+
+// MARK: - General
+
+/// Login item, light names, CLI installation and the log.
+private struct GeneralSettings: View {
+    @Bindable var model = AppModel.shared
+    @Bindable var prefs = Preferences.shared
+    @State private var launchAtLogin = LoginItem.isEnabled
+    @State private var loginError: String?
+    @State private var cliMessage: String?
+    /// Unsaved name edits, keyed by light, until Rename or Return commits them.
+    @State private var names: [UUID: String] = [:]
+
+    var body: some View {
+        Form {
+            Section("Startup") {
+                Toggle("Launch VegaBar at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, on in
+                        loginError = LoginItem.set(on)
+                        // Re-read the real state: registration can fail or need approval.
+                        launchAtLogin = LoginItem.isEnabled
+                        if LoginItem.needsApproval {
+                            loginError = "Approve VegaBar in System Settings › General › Login Items."
+                        }
+                    }
+                if let loginError { Text(loginError).font(.caption).foregroundStyle(.secondary) }
+            }
+
+            Section("Lights") {
+                if model.lights.isEmpty { Text("No lights paired.").foregroundStyle(.secondary) }
+                ForEach(model.lights) { light in
+                    HStack {
+                        TextField("Name", text: Binding(
+                            get: { names[light.id] ?? light.name },
+                            set: { names[light.id] = $0 }))
+                        .onSubmit { commitName(light) }
+                        Button("Rename") { commitName(light) }
+                            .disabled((names[light.id] ?? light.name) == light.name)
+                        Button("Identify") { model.select(light); model.identify() }
+                    }
+                }
+                Text("Names are stored in VegaBar; the light keeps broadcasting its own name.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Command line") {
+                HStack {
+                    Text("vegabar").font(.body.monospaced())
+                    Spacer()
+                    Button("Install Command-Line Tool") { cliMessage = CLIInstaller.install() }
+                }
+                Text(cliMessage ?? "Try: vegabar status · vegabar brightness 40 · vegabar cct 5600 · vegabar preset Call")
+                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                Text("URLs work too, e.g. vegabar://brightness/+10 from Shortcuts' Open URL.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Diagnostics") {
+                Toggle("Log Bluetooth frames to a file", isOn: $prefs.frameTraceEnabled)
+                Text(prefs.frameTraceEnabled
+                     ? "Every frame sent and received goes to ~/Library/Logs/VegaBar.log (capped at 2 MB, one older copy kept). Turn this off when you're done debugging."
+                     : "Events are in Console.app under the subsystem \(Log.subsystem). Turn this on only to capture raw frames.")
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Button("Open Console") { LogViewer.openConsole() }
+                    if prefs.frameTraceEnabled {
+                        Button("Show Frame Log in Finder") { NSWorkspace.shared.activateFileViewerSelecting([FrameTrace.url]) }
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    /// Saves an edited name (trimmed; empty names are ignored).
+    private func commitName(_ light: Light) {
+        let name = (names[light.id] ?? light.name).trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        model.rename(light, to: name)
+        names[light.id] = nil
+    }
+}
+
+/// Symlinks the CLI bundled in VegaBar.app onto the PATH.
+///
+/// Tries the usual bin folders in order, using the first one that is
+/// writable, and returns a message for the UI either way. Because it's a
+/// symlink, the CLI updates whenever the app does.
+enum CLIInstaller {
+    static func install() -> String {
+        let source = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/vegabar")
+        guard FileManager.default.isExecutableFile(atPath: source.path) else { return "The bundled CLI is missing from VegaBar.app." }
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser.path
+        let candidates = ["/opt/homebrew/bin", "/usr/local/bin", "\(home)/.local/bin"]
+        for dir in candidates {
+            // Only create the folder in the user's own home; never system folders.
+            if dir.hasPrefix(home) { try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true) }
+            guard fm.isWritableFile(atPath: dir) else { continue }
+            let link = "\(dir)/vegabar"
+            // Replace an existing *link* (e.g. to an older copy of the app), but
+            // never delete a real file the user put there themselves.
+            if let attrs = try? fm.attributesOfItem(atPath: link) {
+                guard attrs[.type] as? FileAttributeType == .typeSymbolicLink else {
+                    return "\(link) already exists and isn't a symlink. Remove or rename it, then try again."
+                }
+                try? fm.removeItem(atPath: link)
+            }
+            do {
+                try fm.createSymbolicLink(atPath: link, withDestinationPath: source.path)
+                let onPath = (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":").contains { $0 == dir }
+                return "Installed \(link)" + (onPath || !dir.hasPrefix(home) ? "." : " — add \(dir) to your PATH.")
+            } catch {
+                continue
+            }
+        }
+        return "Couldn't write to \(candidates.joined(separator: ", ")). Run: ln -s \"\(source.path)\" /usr/local/bin/vegabar"
+    }
+}
+
+// MARK: - Automation
+
+/// Camera, sleep / lock and time-of-day colour temperature options.
+private struct AutomationSettings: View {
+    @Bindable var prefs = Preferences.shared
+
+    var body: some View {
+        Form {
+            Section("Camera") {
+                Toggle("Turn the light on when a camera is in use", isOn: $prefs.cameraAutoOn)
+                Picker("When the camera starts", selection: $prefs.cameraPresetId) {
+                    Text("Just turn on").tag(UUID?.none)
+                    ForEach(prefs.presets) { Text("Apply “\($0.name)”").tag(UUID?.some($0.id)) }
+                }
+                .disabled(!prefs.cameraAutoOn)
+                Toggle("Turn it off again when the camera stops", isOn: $prefs.cameraAutoOff)
+                    .disabled(!prefs.cameraAutoOn)
+                Text("Works with any app — FaceTime, Zoom, Meet, Photo Booth. Only turns off a light it turned on.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Follow the Mac") {
+                Toggle("Turn off when the Mac sleeps", isOn: $prefs.offWhenMacSleeps)
+                Toggle("Turn off when the screen locks", isOn: $prefs.offWhenScreenLocks)
+                Text("The light comes back on when you return, if VegaBar turned it off.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Time-of-day color temperature") {
+                Toggle("Adjust color temperature through the day", isOn: $prefs.autoColorTemp)
+                    // Turning the feature on applies the schedule immediately.
+                    .onChange(of: prefs.autoColorTemp) { _, on in if on { Automations.shared.resumeColorSchedule() } }
+                Group {
+                    LabeledContent("Daytime") {
+                        Stepper("\(Int(prefs.dayKelvin))K", value: $prefs.dayKelvin, in: 2700...6500, step: 100)
+                    }
+                    LabeledContent("Evening") {
+                        Stepper("\(Int(prefs.eveningKelvin))K", value: $prefs.eveningKelvin, in: 2700...6500, step: 100)
+                    }
+                    DatePicker("Evening starts", selection: minutesBinding(\.eveningStart), displayedComponents: .hourAndMinute)
+                    DatePicker("Morning starts", selection: minutesBinding(\.morningStart), displayedComponents: .hourAndMinute)
+                }
+                .disabled(!prefs.autoColorTemp)
+                Text("Blends over an hour around each start time. Moving the color slider yourself pauses it until the next change.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    /// Bridges a "minutes after midnight" preference to the Date a DatePicker
+    /// needs (today's date at that time) and back.
+    private func minutesBinding(_ key: ReferenceWritableKeyPath<Preferences, Int>) -> Binding<Date> {
+        Binding(
+            get: { Calendar.current.date(bySettingHour: prefs[keyPath: key] / 60, minute: prefs[keyPath: key] % 60,
+                                         second: 0, of: Date()) ?? Date() },
+            set: {
+                let c = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                prefs[keyPath: key] = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+            })
+    }
+}
+
+// MARK: - Hotkeys
+
+/// Recorders for each global shortcut, plus how far each press moves.
+private struct HotkeySettings: View {
+    @Bindable var prefs = Preferences.shared
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(HotkeyAction.allCases) { action in
+                    LabeledContent(action.title) { HotkeyRecorder(action: action) }
+                }
+            } footer: {
+                Text("Shortcuts work in any app. Use ⌘, ⌥ or ⌃ in each one. Esc cancels recording; Delete clears.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Step sizes") {
+                LabeledContent("Brightness") {
+                    Stepper("\(Int(prefs.brightnessStep))%", value: $prefs.brightnessStep, in: 1...50)
+                }
+                LabeledContent("Color temperature") {
+                    Stepper("\(Int(prefs.kelvinStep))K", value: $prefs.kelvinStep, in: 50...1000, step: 50)
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+// MARK: - Presets
+
+/// Edit, reorder, apply and delete presets, or add one from the light's
+/// current settings.
+private struct PresetSettings: View {
+    @Bindable var prefs = Preferences.shared
+    @Bindable var model = AppModel.shared
+
+    var body: some View {
+        Form {
+            ForEach($prefs.presets) { $preset in
+                Section { presetEditor($preset) }
+            }
+            Section {
+                HStack {
+                    Button("Add From Current Light") {
+                        prefs.presets.append(Preset(name: "Preset \(prefs.presets.count + 1)",
+                                                    brightness: model.brightness, colorTemperature: model.cct))
+                    }
+                    Spacer()
+                    Text("Presets also appear in Shortcuts and the CLI.").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    /// One preset: name and actions on the first row, then a labelled slider
+    /// per value with its reading on the right.
+    private func presetEditor(_ preset: Binding<Preset>) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                TextField("", text: preset.name, prompt: Text("Preset name"))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.body.weight(.medium))
+                    .frame(maxWidth: 220)
+                Spacer()
+                Button("Apply") { model.applyPreset(preset.wrappedValue) }
+                    .disabled(!model.isConnected)
+                Button(role: .destructive) { prefs.presets.removeAll { $0.id == preset.wrappedValue.id } } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .help("Delete preset")
+            }
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
+                GridRow {
+                    Label("Brightness", systemImage: "sun.max")
+                        .foregroundStyle(.secondary)
+                        .gridColumnAlignment(.leading)
+                    Slider(value: preset.brightness, in: 0...100, step: 1)
+                    Text(verbatim: "\(Int(preset.wrappedValue.brightness))%")
+                        .monospacedDigit()
+                        .frame(width: 56, alignment: .trailing)
+                }
+                GridRow {
+                    Label("Color temperature", systemImage: "thermometer.medium")
+                        .foregroundStyle(.secondary)
+                    Slider(value: preset.colorTemperature, in: 2700...6500, step: 50)
+                    Text(verbatim: "\(Int(preset.wrappedValue.colorTemperature))K")
+                        .monospacedDigit()
+                        .frame(width: 56, alignment: .trailing)
+                }
+            }
+            .font(.callout)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+
+/// Opens Console.app, where VegaBar's events are logged (subsystem
+/// `org.dasmart.vegabar`). Console has no URL to pre-filter a subsystem, so the
+/// General tab shows the name to search for.
+enum LogViewer {
+    static func openConsole() {
+        NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Console.app"))
+    }
+}
