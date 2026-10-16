@@ -238,6 +238,12 @@ private struct HotkeySettings: View {
 private struct PresetSettings: View {
     @Bindable var prefs = Preferences.shared
     @Bindable var model = AppModel.shared
+    /// Names being edited, keyed by preset id. Typing goes here rather than
+    /// straight into `prefs.presets`, so each keystroke doesn't rewrite and
+    /// re-render the whole list; the name is saved on Return or when the field
+    /// loses focus.
+    @State private var drafts: [UUID: String] = [:]
+    @FocusState private var focusedName: UUID?
 
     var body: some View {
         Form {
@@ -258,6 +264,14 @@ private struct PresetSettings: View {
         .formStyle(.grouped)
     }
 
+    /// Saves an edited name; blank names keep the old one.
+    private func commitName(_ id: UUID) {
+        guard let draft = drafts.removeValue(forKey: id) else { return }
+        let name = draft.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, let i = prefs.presets.firstIndex(where: { $0.id == id }) else { return }
+        if prefs.presets[i].name != name { prefs.presets[i].name = name }
+    }
+
     /// Snaps a slider's value to multiples of `step` without using Slider's own
     /// `step:`, which on macOS renders a tick mark for every step.
     private func rounded(_ value: Binding<Double>, to step: Double) -> Binding<Double> {
@@ -269,11 +283,17 @@ private struct PresetSettings: View {
     private func presetEditor(_ preset: Binding<Preset>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                TextField("", text: preset.name, prompt: Text("Preset name"))
+                let id = preset.wrappedValue.id
+                TextField("", text: Binding(
+                    get: { drafts[id] ?? preset.wrappedValue.name },
+                    set: { drafts[id] = $0 }), prompt: Text("Preset name"))
                     .textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.leading)   // the form would right-align it otherwise
                     .font(.body.weight(.medium))
                     .frame(maxWidth: 220)
+                    .focused($focusedName, equals: id)
+                    .onSubmit { commitName(id) }
+                    .onChange(of: focusedName) { old, _ in if old == id { commitName(id) } }
                 Spacer()
                 Button("Apply") { model.applyPreset(preset.wrappedValue) }
                     .disabled(!model.isConnected)

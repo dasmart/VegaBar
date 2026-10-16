@@ -141,12 +141,16 @@ struct MenuView: View {
     /// Up to four presets as one-tap buttons, plus "+" to save the current
     /// settings as a new preset and open it in Settings for naming.
     private var presetRow: some View {
-        HStack(spacing: 6) {
-            ForEach(prefs.presets.prefix(4)) { preset in
-                Button(preset.name) { model.applyPreset(preset) }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .help("\(Int(preset.brightness))% · \(Int(preset.colorTemperature))K")
+        FlowLayout(spacing: 6) {
+            ForEach(prefs.presets) { preset in
+                Button {
+                    model.applyPreset(preset)
+                } label: {
+                    Text(preset.name).lineLimit(1).truncationMode(.tail).frame(maxWidth: 120)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("\(Int(preset.brightness))% · \(Int(preset.colorTemperature))K")
             }
             Button {
                 prefs.presets.append(Preset(name: "Preset \(prefs.presets.count + 1)",
@@ -301,5 +305,39 @@ struct MenuView: View {
         }
         .buttonStyle(.borderless)
         .font(.caption)
+    }
+}
+
+/// Lays out its children left to right, wrapping onto new lines when the row is
+/// full, so any number of preset buttons fits the popover's fixed width.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 300
+        return CGSize(width: width, height: place(in: width, subviews: subviews).height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (subview, point) in zip(subviews, place(in: bounds.width, subviews: subviews).points) {
+            subview.place(at: CGPoint(x: bounds.minX + point.x, y: bounds.minY + point.y), proposal: .unspecified)
+        }
+    }
+
+    private func place(in width: CGFloat, subviews: Subviews) -> (points: [CGPoint], height: CGFloat) {
+        var points: [CGPoint] = []
+        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > width {   // wrap
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            points.append(CGPoint(x: x, y: y))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return (points, y + rowHeight)
     }
 }
