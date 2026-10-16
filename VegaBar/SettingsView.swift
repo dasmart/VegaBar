@@ -258,6 +258,12 @@ private struct PresetSettings: View {
         .formStyle(.grouped)
     }
 
+    /// Snaps a slider's value to multiples of `step` without using Slider's own
+    /// `step:`, which on macOS renders a tick mark for every step.
+    private func rounded(_ value: Binding<Double>, to step: Double) -> Binding<Double> {
+        Binding(get: { value.wrappedValue }, set: { value.wrappedValue = ($0 / step).rounded() * step })
+    }
+
     /// One preset: name and actions on the first row, then a labelled slider
     /// per value with its reading on the right.
     private func presetEditor(_ preset: Binding<Preset>) -> some View {
@@ -265,6 +271,7 @@ private struct PresetSettings: View {
             HStack(spacing: 8) {
                 TextField("", text: preset.name, prompt: Text("Preset name"))
                     .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.leading)   // the form would right-align it otherwise
                     .font(.body.weight(.medium))
                     .frame(maxWidth: 220)
                 Spacer()
@@ -281,7 +288,8 @@ private struct PresetSettings: View {
                     Label("Brightness", systemImage: "sun.max")
                         .foregroundStyle(.secondary)
                         .gridColumnAlignment(.leading)
-                    Slider(value: preset.brightness, in: 0...100, step: 1)
+                    // No `step:` — on macOS that draws a tick per step under the track.
+                    Slider(value: rounded(preset.brightness, to: 1), in: 0...100)
                     Text(verbatim: "\(Int(preset.wrappedValue.brightness))%")
                         .monospacedDigit()
                         .frame(width: 56, alignment: .trailing)
@@ -289,7 +297,7 @@ private struct PresetSettings: View {
                 GridRow {
                     Label("Color temperature", systemImage: "thermometer.medium")
                         .foregroundStyle(.secondary)
-                    Slider(value: preset.colorTemperature, in: 2700...6500, step: 50)
+                    Slider(value: rounded(preset.colorTemperature, to: 50), in: 2700...6500)
                     Text(verbatim: "\(Int(preset.wrappedValue.colorTemperature))K")
                         .monospacedDigit()
                         .frame(width: 56, alignment: .trailing)
