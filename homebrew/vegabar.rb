@@ -10,7 +10,7 @@
 # are notarized.
 cask "vegabar" do
   version "0.3.0"
-  sha256 "REPLACE_WITH_SHA256_FROM_RELEASE"
+  sha256 "37b42aff9c9a6c5d603f40ded11165df1ef380e928cff9d055889e530a059101"
 
   url "https://github.com/dasmart/VegaBar/releases/download/v#{version}/VegaBar.zip"
   name "VegaBar"
