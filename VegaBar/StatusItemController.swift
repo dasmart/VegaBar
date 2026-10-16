@@ -122,19 +122,34 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 @MainActor
 enum SettingsWindow {
     private static var window: NSWindow?
+    private static var tabs: NSTabViewController?
 
-    /// Shows the settings window, creating it once and then reusing it. `tab` only
-    /// takes effect when the window is first created.
     static func show(tab: SettingsView.Tab = .general) {
         if window == nil {
-            let w = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(initialTab: tab)))
-            w.title = "VegaBar Settings"
+            // Toolbar-style tabs (icon over label in the title bar) are the
+            // standard look for a macOS Settings window.
+            let controller = NSTabViewController()
+            controller.tabStyle = .toolbar
+            controller.canPropagateSelectedChildViewControllerTitle = true
+            for pane in SettingsView.Tab.allCases {
+                let host = NSHostingController(rootView: pane.makeView())
+                host.title = pane.title
+                host.preferredContentSize = pane.size
+                let item = NSTabViewItem(viewController: host)
+                item.label = pane.title
+                item.image = NSImage(systemSymbolName: pane.symbol, accessibilityDescription: pane.title)
+                controller.addTabViewItem(item)
+            }
+            let w = NSWindow(contentViewController: controller)
             w.styleMask = [.titled, .closable, .miniaturizable]
+            w.toolbarStyle = .preference
             // Keep the window object after close so the next `show` reuses it.
             w.isReleasedWhenClosed = false
             w.center()
             window = w
+            tabs = controller
         }
+        tabs?.selectedTabViewItemIndex = tab.rawValue
         // An accessory app isn't active by default; activate so the window comes
         // to the front.
         NotificationCenter.default.post(name: .vegaBarWillShowWindow, object: nil)
@@ -142,7 +157,6 @@ enum SettingsWindow {
         window?.makeKeyAndOrderFront(nil)
     }
 }
-
 
 extension Notification.Name {
     /// Posted just before VegaBar brings up one of its own windows.

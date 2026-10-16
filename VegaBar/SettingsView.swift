@@ -2,28 +2,57 @@ import AppKit
 import SwiftUI
 
 /// The settings window: General, Automation, Hotkeys and Presets tabs.
-struct SettingsView: View {
-    /// Lets callers (e.g. the "+" preset button) open a specific tab.
-    enum Tab: Hashable { case general, automation, hotkeys, presets }
-    @State var tab: Tab
+/// The Settings panes. The window itself is AppKit (see `SettingsWindow`): an
+/// `NSTabViewController` with toolbar-style tabs, which is how macOS Settings
+/// windows look, hosting one SwiftUI view per pane.
+enum SettingsView {
+    enum Tab: Int, CaseIterable {
+        case general, automation, hotkeys, presets
 
-    init(initialTab: Tab = .general) { _tab = State(initialValue: initialTab) }
-
-    var body: some View {
-        TabView(selection: $tab) {
-            GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }.tag(Tab.general)
-            AutomationSettings().tabItem { Label("Automation", systemImage: "wand.and.stars") }.tag(Tab.automation)
-            HotkeySettings().tabItem { Label("Hotkeys", systemImage: "keyboard") }.tag(Tab.hotkeys)
-            PresetSettings().tabItem { Label("Presets", systemImage: "slider.horizontal.3") }.tag(Tab.presets)
+        var title: String {
+            switch self {
+            case .general: "General"
+            case .automation: "Automation"
+            case .hotkeys: "Hotkeys"
+            case .presets: "Presets"
+            }
         }
-        .frame(width: 540, height: 480)
+
+        var symbol: String {
+            switch self {
+            case .general: "gearshape"
+            case .automation: "wand.and.stars"
+            case .hotkeys: "keyboard"
+            case .presets: "slider.horizontal.3"
+            }
+        }
+
+        /// Each pane sizes its window; the tab controller animates between them.
+        var size: NSSize {
+            switch self {
+            case .general: NSSize(width: 560, height: 520)
+            case .automation: NSSize(width: 560, height: 560)
+            case .hotkeys: NSSize(width: 560, height: 400)
+            case .presets: NSSize(width: 560, height: 600)
+            }
+        }
+
+        @MainActor
+        func makeView() -> AnyView {
+            switch self {
+            case .general: AnyView(GeneralSettings())
+            case .automation: AnyView(AutomationSettings())
+            case .hotkeys: AnyView(HotkeySettings())
+            case .presets: AnyView(PresetSettings())
+            }
+        }
     }
 }
 
 // MARK: - General
 
 /// Login item, light names, CLI installation and the log.
-private struct GeneralSettings: View {
+struct GeneralSettings: View {
     @Bindable var model = AppModel.shared
     @Bindable var prefs = Preferences.shared
     @State private var launchAtLogin = LoginItem.isEnabled
@@ -141,7 +170,7 @@ enum CLIInstaller {
 // MARK: - Automation
 
 /// Camera, sleep / lock and time-of-day colour temperature options.
-private struct AutomationSettings: View {
+struct AutomationSettings: View {
     @Bindable var prefs = Preferences.shared
 
     var body: some View {
@@ -204,7 +233,7 @@ private struct AutomationSettings: View {
 // MARK: - Hotkeys
 
 /// Recorders for each global shortcut, plus how far each press moves.
-private struct HotkeySettings: View {
+struct HotkeySettings: View {
     @Bindable var prefs = Preferences.shared
 
     var body: some View {
@@ -234,7 +263,7 @@ private struct HotkeySettings: View {
 
 /// Edit, reorder, apply and delete presets, or add one from the light's
 /// current settings.
-private struct PresetSettings: View {
+struct PresetSettings: View {
     @Bindable var prefs = Preferences.shared
     @Bindable var model = AppModel.shared
     /// Names being edited, keyed by preset id. Typing goes here rather than
