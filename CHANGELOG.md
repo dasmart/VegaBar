@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- About window (from the menu, or `vegabar://about`) with the version and the licenses of the bundled open source libraries; `ACKNOWLEDGMENTS.md` and `LICENSE` now ship inside the app.
+- Homebrew: the cask's caveats no longer suggest `--no-quarantine`, which Homebrew has removed.
+
 ## 0.3.0 — 2026-10-16
 
 First public release.

@@ -47,6 +47,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let appItem = NSMenuItem()
         main.addItem(appItem)
         let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About VegaBar", action: #selector(showAbout), keyEquivalent: "")
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Preferences…", action: #selector(showPreferences), keyEquivalent: ",")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit VegaBar", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -76,15 +78,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showPreferences() { SettingsWindow.show() }
+    @objc private func showAbout() { AboutPanel.show() }
 
     func applicationWillTerminate(_ notification: Notification) {
         controlServer?.stop()
     }
 
     /// vegabar://on | off | toggle | brightness/40 | brightness/+10 | cct/5600 | preset/Call
-    /// vegabar://preferences[/general|automation|hotkeys|presets]
+    /// vegabar://preferences[/general|automation|hotkeys|presets] | about
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
+            if url.host()?.lowercased() == "about" {
+                AboutPanel.show()
+                continue
+            }
             if url.host()?.lowercased() == "preferences" {
                 let tab: SettingsView.Tab = switch url.pathComponents.dropFirst().first?.lowercased() {
                 case "automation": .automation

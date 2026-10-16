@@ -158,6 +158,26 @@ enum SettingsWindow {
     }
 }
 
+/// The standard About panel: icon, name, version and copyright from Info.plist,
+/// plus the bundled ACKNOWLEDGMENTS.md as the scrolling credits.
+@MainActor
+enum AboutPanel {
+    static func show() {
+        var options: [NSApplication.AboutPanelOptionKey: Any] = [:]
+        if let url = Bundle.main.url(forResource: "ACKNOWLEDGMENTS", withExtension: "md"),
+           let text = try? String(contentsOf: url, encoding: .utf8) {
+            // Plain text, not Markdown: the license notices must appear verbatim.
+            options[.credits] = NSAttributedString(string: text, attributes: [
+                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+                .foregroundColor: NSColor.textColor,
+            ])
+        }
+        NotificationCenter.default.post(name: .vegaBarWillShowWindow, object: nil)
+        NSApp.activate()
+        NSApp.orderFrontStandardAboutPanel(options: options)
+    }
+}
+
 extension Notification.Name {
     /// Posted just before VegaBar brings up one of its own windows.
     static let vegaBarWillShowWindow = Notification.Name("org.dasmart.vegabar.willShowWindow")

@@ -294,13 +294,14 @@ struct MenuView: View {
 
     // MARK: Footer
 
-    /// Pairing entry point and Quit.
+    /// Pairing entry point, About and Quit.
     private var footer: some View {
         HStack {
             if !model.isPairing && !model.lights.isEmpty {
                 Button("Pair a light…") { model.startPairing() }
             }
             Spacer()
+            Button("About") { AboutPanel.show() }
             Button("Quit") { NSApplication.shared.terminate(nil) }
         }
         .buttonStyle(.borderless)

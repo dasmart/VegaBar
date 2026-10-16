@@ -35,6 +35,12 @@ targets:
     sources:
       - VegaBar
       - Shared
+      # Shown in the About window; the third-party licenses require that
+      # their notices ship with the binary.
+      - path: ACKNOWLEDGMENTS.md
+        buildPhase: resources
+      - path: LICENSE
+        buildPhase: resources
     dependencies:
       - package: NordicMesh
       - target: VegaBarCLI
@@ -50,6 +56,7 @@ targets:
         CFBundleShortVersionString: "0.3.0"
         CFBundleVersion: "3"
         LSUIElement: true
+        NSHumanReadableCopyright: "Copyright © 2026 Archie Smart. MIT License."
         LSApplicationCategoryType: public.app-category.utilities
         NSBluetoothAlwaysUsageDescription: VegaBar uses Bluetooth to pair with and control your ZY lights.
         CFBundleURLTypes:

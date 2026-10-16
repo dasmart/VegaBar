@@ -59,7 +59,7 @@ vegabar identify              make the light blink
 
 It launches VegaBar if it isn't running, and the exit status tells you whether the command worked.
 
-**URLs.** Anything that can open a link can control the light: `vegabar://on`, `vegabar://off`, `vegabar://toggle`, `vegabar://brightness/40`, `vegabar://brightness/+10`, `vegabar://cct/5600`, `vegabar://preset/Call`, and `vegabar://preferences`.
+**URLs.** Anything that can open a link can control the light: `vegabar://on`, `vegabar://off`, `vegabar://toggle`, `vegabar://brightness/40`, `vegabar://brightness/+10`, `vegabar://cct/5600`, `vegabar://preset/Call`, `vegabar://preferences`, and `vegabar://about`.
 
 **Built to be safe.** Every command goes through a safety check right before it reaches the light: only the handful of commands VegaBar needs are allowed, values are held to the light's real ranges, and changes are rate-limited so nothing can strobe it — whether the request came from the menu, a script or an automation.
 
@@ -108,3 +108,5 @@ Building, testing, how the protocol and pairing work, where data lives, the arch
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+VegaBar is built on Nordic Semiconductor's [nRF Mesh Library](https://github.com/NordicSemiconductor/IOS-nRF-Mesh-Library) (BSD 3-Clause) and, through it, [CryptoSwift](https://github.com/krzyzanowskim/CryptoSwift). Their licenses are in [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md) and in the app's About window. This product includes software developed by the "Marcin Krzyzanowski" (http://krzyzanowskim.com/).
