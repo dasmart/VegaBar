@@ -1,5 +1,6 @@
 import CoreBluetooth
 import Foundation
+import os
 @preconcurrency import NordicMesh
 
 /// Owns the Bluetooth Mesh network this Mac uses as provisioner, and runs the
@@ -77,6 +78,12 @@ final class MeshController: NSObject {
         // Tells us when the connected proxy has been identified (see `proxyReady`).
         manager.proxyFilter.delegate = self
         loadOrCreateNetwork()
+        // Creates the Mac's own mandatory models (Configuration Client among
+        // them). NordicMesh requires this after every load or create, even with
+        // no custom models: without it no local model can decode the light's
+        // config replies, so they arrive as unknown messages and the awaiting
+        // send never completes.
+        manager.localElements = []
     }
 
     // MARK: - Network
@@ -292,15 +299,39 @@ final class MeshController: NSObject {
 
     /// Bridges NordicMesh's callback-based acknowledged send into async/await.
     /// The callback fires with the light's status message, or an error on timeout.
-    private func send(_ message: AcknowledgedConfigMessage, to node: Node) async throws -> ConfigResponse {
-        try await withCheckedThrowingContinuation { cont in
+    ///
+    /// NordicMesh's own timeout stops once a reply arrives, even one it can't
+    /// deliver, so VegaBar keeps its own: after `timeout` the send fails rather
+    /// than leaving pairing stuck. Whichever comes first resumes; the other is
+    /// ignored.
+    private func send(_ message: AcknowledgedConfigMessage, to node: Node,
+                      timeout: Duration = .seconds(20)) async throws -> ConfigResponse {
+        let resumed = OSAllocatedUnfairLock(initialState: false)
+        return try await withCheckedThrowingContinuation { cont in
+            @Sendable func finish(_ result: Result<ConfigResponse, Error>) {
+                let first = resumed.withLock { done -> Bool in
+                    defer { done = true }
+                    return !done
+                }
+                if first { cont.resume(with: result) }
+            }
             do {
-                try manager.send(message, to: node) { result in cont.resume(with: result) }
+                try manager.send(message, to: node) { finish($0) }
             } catch {
-                cont.resume(throwing: error)
+                finish(.failure(error))
+                return
+            }
+            Task {
+                try? await Task.sleep(for: timeout)
+                finish(.failure(ConfigTimeout()))
             }
         }
     }
+}
+
+/// The light didn't answer a pairing configuration message in time.
+struct ConfigTimeout: LocalizedError {
+    var errorDescription: String? { "The light didn't answer in time." }
 }
 
 // MARK: - Bearer delegate
