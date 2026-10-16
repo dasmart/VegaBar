@@ -47,7 +47,7 @@ targets:
       path: VegaBar/Info.plist
       properties:
         CFBundleDisplayName: VegaBar
-        CFBundleShortVersionString: "0.3"
+        CFBundleShortVersionString: "0.3.0"
         CFBundleVersion: "3"
         LSUIElement: true
         LSApplicationCategoryType: public.app-category.utilities
