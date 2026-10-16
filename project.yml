@@ -16,6 +16,18 @@ settings:
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: YES
     MACOSX_DEPLOYMENT_TARGET: "14.0"
+  configs:
+    Release:
+      # Ship a small binary: strip the symbol table (it was two thirds of the
+      # file), drop unreferenced code, and favour size over speed — nothing in a
+      # light controller is CPU-bound.
+      DEPLOYMENT_POSTPROCESSING: YES
+      STRIP_INSTALLED_PRODUCT: YES
+      STRIP_STYLE: all
+      COPY_PHASE_STRIP: YES
+      DEAD_CODE_STRIPPING: YES
+      SWIFT_OPTIMIZATION_LEVEL: -Osize
+      GCC_OPTIMIZATION_LEVEL: s
 targets:
   VegaBar:
     type: application
