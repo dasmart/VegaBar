@@ -116,6 +116,10 @@ Signing and notarization happen automatically when these repository secrets exis
 
 Issues and pull requests are welcome. Run `./test.sh` before opening a PR; the CI workflow runs the same build and tests on every push. If you have a different Zhiyun light, a frame log (Preferences › General › "Log Bluetooth frames to a file") is the most useful thing to attach to an issue. Please don't contribute anything derived from Zhiyun's own code; VegaBar is a clean implementation of the observed protocol.
 
+## Screenshots
+
+README images live in `docs/images/`. Capture windows with ⌘⇧4 then Space (Retina PNG with the window shadow), and reference them with an `<img width="…">` tag at half the pixel width so they display at 1x.
+
 ## Icon
 
 The app icon is an original design, `Design/icon.svg`: a panel light with the warm-to-cool colour-temperature range over a slider. Render the asset catalog from it with any SVG rasteriser at 16–512 pt, 1x and 2x.

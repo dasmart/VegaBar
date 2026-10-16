@@ -2,6 +2,10 @@
 
 Control your Zhiyun light from the Mac menubar.
 
+<p align="center">
+  <img src="docs/images/menu.png" width="405" alt="The VegaBar menu: power switch, brightness and color temperature sliders, presets and the list of lights">
+</p>
+
 VegaBar is a small, native macOS app for Zhiyun's Bluetooth lights — the ones the ZY Vega phone app controls. It lives in the menubar, pairs directly with the light, and gives you power, brightness and colour temperature a click, a keystroke, a Shortcut or a shell command away. No phone, no cloud, no account.
 
 Requires macOS 14 or later; runs on Apple silicon and Intel.
