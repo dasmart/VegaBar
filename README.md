@@ -4,13 +4,21 @@ Control your Zhiyun light from the Mac menubar.
 
 VegaBar is a small, native macOS app for Zhiyun's Bluetooth lights — the ones the ZY Vega phone app controls. It lives in the menubar, pairs directly with the light, and gives you power, brightness and colour temperature a click, a keystroke, a Shortcut or a shell command away. No phone, no cloud, no account.
 
-Tested with a Zhiyun Molus 60. Other bi-colour Zhiyun lights that pair over Bluetooth Mesh should work the same way. Requires macOS 14 or later; runs on Apple silicon and Intel.
+Requires macOS 14 or later; runs on Apple silicon and Intel.
 
 > VegaBar is an independent project, not affiliated with or endorsed by Zhiyun.
 
 ## Disclaimer
 
 VegaBar is provided as is, without warranty of any kind, and you use it entirely at your own risk. It drives your lights over a reverse-engineered protocol that the manufacturer has not documented or approved. The author accepts no responsibility for anything that happens as a result of using it: a light that stops working, a pairing you can't undo, a house fire, a ruined video call, or any other consequence of your own decisions. If you aren't comfortable with that, don't use it. See the [LICENSE](LICENSE) for the legal version.
+
+## Which lights?
+
+I built and tested VegaBar with a single **Zhiyun Molus G60**. That is the only light it has ever been used with, and I have no idea whether it works with any other model. Other bi-colour Zhiyun lights that pair over Bluetooth Mesh use the same app and, as far as I can tell, the same protocol, so there's a reasonable chance — but it's untested, and RGB lights would need work that hasn't been done.
+
+If you try it with something else, please open an issue and say what happened, either way. A frame log (Preferences › General › "Log Bluetooth frames to a file") is the most useful thing you can attach.
+
+**Multiple lights and groups.** The protocol supports controlling several lights through one connection, and grouping them, and I'd like VegaBar to do that. With only one light to test against I can't build it blind. If you have two or more Zhiyun lights and would like to help test, get in touch through the issues.
 
 ## Features
 
@@ -80,8 +88,7 @@ A light paired with VegaBar won't be visible to the phone app until you unpair i
 ## Tips
 
 - **Bluetooth stuck?** If VegaBar stops connecting after being force-quit mid-connection, turn Bluetooth off and on.
-- **Battery:** lights that report a battery level show it in the menu. The Molus 60 doesn't.
-- **Several lights:** VegaBar is single-light for now. The protocol supports groups, but there was no second light to test with. Contributions welcome.
+- **Battery:** lights that report a battery level show it in the menu. The Molus G60 doesn't.
 - **Something not working?** Preferences › General has a switch to log every Bluetooth frame to a file, which is the most useful thing to attach to an issue.
 
 ## For developers
