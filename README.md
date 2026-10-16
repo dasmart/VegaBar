@@ -140,7 +140,7 @@ Every frame passes through `LightSafety` immediately before it's written over Bl
 
 1. Bump `CFBundleShortVersionString` / `CFBundleVersion` in `project.yml` and add a section to `CHANGELOG.md`.
 2. Tag and push: `git tag v0.3.0 && git push --tags`.
-3. The release workflow builds a universal app, signs it (Developer ID and notarization if the secrets `DEVELOPER_ID_P12`, `DEVELOPER_ID_P12_PASSWORD`, `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID` and `NOTARY_KEY` are set; ad-hoc otherwise), zips it and attaches it to a GitHub Release, and prints the SHA-256 for the Homebrew cask in `homebrew/vegabar.rb`.
+3. The release workflow builds a universal app, signs it as one unit (Developer ID and notarization if the secrets `DEVELOPER_ID_P12`, `DEVELOPER_ID_P12_PASSWORD`, `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID` and `NOTARY_KEY` are set; ad-hoc otherwise), zips it and attaches it to a GitHub Release, and prints the SHA-256 for the Homebrew cask in `homebrew/vegabar.rb`.
 
 ## Contributing
 

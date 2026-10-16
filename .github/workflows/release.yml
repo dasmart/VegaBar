@@ -47,7 +47,6 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
           IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -1 | sed -E 's/.*"(.*)"/\1/')
           echo "VEGABAR_SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
-          echo "VEGABAR_TEAM_ID=$(echo "$IDENTITY" | sed -E 's/.*\(([A-Z0-9]+)\)$/\1/')" >> "$GITHUB_ENV"
           rm cert.p12
 
       - name: Build universal app
