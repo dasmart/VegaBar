@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Network
 
@@ -107,15 +108,19 @@ func exchange(_ request: Request, timeout: TimeInterval) throws -> ControlProtoc
 }
 
 /// Launches the VegaBar.app this tool is embedded in (Contents/Helpers/vegabar),
-/// following the symlink the installer created. Falls back to the bundle id.
+/// in the background. The tool's real path is used, not argv[0], which is just
+/// "vegabar" when the shell found it on the PATH. Falls back to the bundle id.
 func launchApp() {
-    let exe = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath()
-    let app = exe.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-    let open = Process()
-    open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-    open.arguments = app.pathExtension == "app" ? ["-g", app.path] : ["-g", "-b", ControlProtocol.appBundleIdentifier]
-    try? open.run()
-    open.waitUntilExit()
+    let exe = (Bundle.main.executableURL ?? URL(fileURLWithPath: CommandLine.arguments[0])).resolvingSymlinksInPath()
+    let embedding = exe.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    let app = embedding.pathExtension == "app" ? embedding
+        : NSWorkspace.shared.urlForApplication(withBundleIdentifier: ControlProtocol.appBundleIdentifier)
+    guard let app else { return }
+    let config = NSWorkspace.OpenConfiguration()
+    config.activates = false
+    let done = DispatchSemaphore(value: 0)
+    NSWorkspace.shared.openApplication(at: app, configuration: config) { _, _ in done.signal() }
+    _ = done.wait(timeout: .now() + 10)
 }
 
 /// Sends the request, launching the app and retrying for a few seconds if it

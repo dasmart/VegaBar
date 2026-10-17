@@ -1,3 +1,8 @@
+#if !APP_STORE
+// The Mac App Store build can't install anything outside its bundle (App
+// Review guideline 2.4.5), so it shows a command to run instead; see
+// `CLISection`.
+
 import Foundation
 import os
 
@@ -264,3 +269,5 @@ private func run(_ executable: String, _ arguments: [String], timeout: TimeInter
         }
     }
 }
+
+#endif

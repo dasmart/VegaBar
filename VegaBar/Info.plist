@@ -37,6 +37,8 @@
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>VegaBar uses Bluetooth to pair with and control your ZY lights.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>VegaBar can turn your light on while a camera is in use. It only checks whether a camera is running; it never opens a camera or sees the picture.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Archie Smart. MIT License.</string>
 </dict>

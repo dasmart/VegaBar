@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Read by macOS the first time the sandboxed (Mac App Store) build runs.
+     It copies the pairing data an earlier direct-download or Homebrew install
+     left in ~/Library/Application Support/VegaBar into the app's container,
+     so paired lights stay paired (otherwise they'd need a factory reset).
+     The originals stay where they are. Preferences migrate by themselves.
+     Unsandboxed builds ignore this file. -->
+<plist version="1.0">
+<dict>
+	<key>Move</key>
+	<array>
+		<string>${ApplicationSupport}/VegaBar</string>
+	</array>
+</dict>
+</plist>

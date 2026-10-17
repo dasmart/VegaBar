@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Mac App Store build only. Direct and Homebrew builds are not sandboxed. -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Pairing with and controlling the lights. -->
+	<key>com.apple.security.device.bluetooth</key>
+	<true/>
+	<!-- The camera automation only asks CoreMediaIO whether any camera is in
+	     use; it never opens a camera or sees a picture. Inside the sandbox,
+	     CoreMediaIO lists no cameras at all without this entitlement (tested). -->
+	<key>com.apple.security.device.camera</key>
+	<true/>
+	<!-- The control socket shared with the bundled vegabar tool. Must match
+	     vegabar-cli/vegabar-cli-AppStore.entitlements and
+	     ControlProtocol.appGroupIdentifier. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>$(TeamIdentifierPrefix)org.dasmart.vegabar</string>
+	</array>
+</dict>
+</plist>

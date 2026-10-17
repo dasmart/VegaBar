@@ -7,6 +7,7 @@ Everything technical that doesn't belong in the [README](README.md): building, t
 ```bash
 brew install xcodegen          # once
 ./build-app.sh                 # universal Release build into build/
+./build-appstore.sh --local    # sandboxed Mac App Store build, ad-hoc, for testing
 ./test.sh                      # unit tests
 open build/VegaBar.app
 ```
@@ -48,7 +49,7 @@ Every frame passes through `LightSafety` in `ZYLink.send`, immediately before it
 
 ### Data
 
-All in `~/Library/Application Support/VegaBar/` (mode 0700, files 0600):
+All in `~/Library/Application Support/VegaBar/` (mode 0700, files 0600). In the Mac App Store build, that folder is inside the app's container, `~/Library/Containers/org.dasmart.vegabar/Data/`, and the socket is in the App Group container.
 
 | File | Contents |
 |---|---|
@@ -93,8 +94,8 @@ Nothing polls. Camera use comes from CoreMediaIO property listeners (with a 30 s
 - **One command layer.** The menu, hotkeys, Shortcuts, the CLI, URLs and automations all call the same `AppModel` methods, so they behave identically and are all covered by the same safety checks.
 - **Singletons as the composition root.** `AppModel.shared` and friends are the app's instances, but every initializer takes its collaborators, so tests build isolated objects with temporary stores and defaults.
 - **Strict concurrency** checking is on (`SWIFT_STRICT_CONCURRENCY = complete`) and the app builds without warnings. CoreBluetooth and NordicMesh are imported `@preconcurrency`; their callbacks arrive on the main queue, which the `@preconcurrency` conformances verify at runtime.
-- **Not sandboxed.** The CLI socket and the symlink installer don't fit App Sandbox. Moving the socket to an App Group container would need a real signing identity for both the app and the CLI.
-- **Mesh keys are files, not Keychain items.** With ad-hoc signing every rebuild is a new app to the Keychain, which would prompt or lose access on each build. The files are 0600 inside a 0700 folder instead. Both this and sandboxing become possible with a stable signing identity.
+- **Two builds.** The direct download and Homebrew build (configuration Release) isn't sandboxed: it installs the CLI with one click and keeps the socket in Application Support. The Mac App Store build (configuration AppStore, `APP_STORE` compilation condition) is sandboxed: the installer is compiled out, the socket moves to the App Group container shared with the sandboxed CLI, and macOS migrates existing pairing data into the container. See [APPSTORE.md](APPSTORE.md).
+- **Mesh keys are files, not Keychain items.** With ad-hoc signing every rebuild is a new app to the Keychain, which would prompt or lose access on each build. The files are 0600 inside a 0700 folder instead. Moving them to the Keychain becomes possible with a stable signing identity.
 - **Why ask the light for its device id.** Device ids live in `lights.json`, separate from the nRF library's file. If the two ever disagree, the connected light reports its own id and VegaBar adopts it, or registers it afresh if it has none.
 
 ## Releasing

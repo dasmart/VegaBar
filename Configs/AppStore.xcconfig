@@ -1,0 +1,9 @@
+// Settings for the Mac App Store build (configuration "AppStore").
+//
+// Signing needs your Apple Developer team. Put it in Configs/Team.xcconfig
+// (git-ignored), one line:
+//
+//   DEVELOPMENT_TEAM = ABCDE12345
+//
+// or pass it on the command line: ./build-appstore.sh reads VEGABAR_TEAM_ID.
+#include? "Team.xcconfig"

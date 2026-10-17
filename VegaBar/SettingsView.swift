@@ -57,8 +57,6 @@ struct GeneralSettings: View {
     @Bindable var prefs = Preferences.shared
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var loginError: String?
-    @State private var cliMessage: String?
-    @State private var cliInstalling = false
     /// Unsaved name edits, keyed by light, until Rename or Return commits them.
     @State private var names: [UUID: String] = [:]
 
@@ -93,25 +91,7 @@ struct GeneralSettings: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            Section("Command line") {
-                HStack {
-                    Text("vegabar").font(.body.monospaced())
-                    Spacer()
-                    if cliInstalling { ProgressView().controlSize(.small) }
-                    Button("Install Command-Line Tool") {
-                        cliInstalling = true
-                        Task {
-                            cliMessage = await CLIInstaller.install()
-                            cliInstalling = false
-                        }
-                    }
-                    .disabled(cliInstalling)
-                }
-                Text(cliMessage ?? "Try: vegabar status · vegabar brightness 40 · vegabar cct 5600 · vegabar preset Call")
-                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                Text("URLs work too, e.g. vegabar://brightness/+10 from Shortcuts' Open URL.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+            CLISection()
 
             Section("Diagnostics") {
                 Toggle("Log Bluetooth frames to a file", isOn: $prefs.frameTraceEnabled)
@@ -136,6 +116,64 @@ struct GeneralSettings: View {
         guard !name.isEmpty else { return }
         model.rename(light, to: name)
         names[light.id] = nil
+    }
+}
+
+/// The "Command line" section of General settings.
+///
+/// Direct and Homebrew builds install the bundled `vegabar` tool with one
+/// click (`CLIInstaller`). The Mac App Store build may not install anything
+/// outside its bundle, so it shows a command to run once in Terminal, plus the
+/// two ways to script VegaBar that need nothing installed.
+struct CLISection: View {
+    @State private var message: String?
+    @State private var installing = false
+    @State private var copied = false
+
+    /// The tool inside this copy of the app.
+    private var toolPath: String {
+        Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/vegabar").path
+    }
+
+    /// What the user runs once to put the tool on their PATH. /usr/local/bin is
+    /// on every Mac's default PATH; `mkdir -p` covers Macs that don't have it yet.
+    private var linkCommand: String {
+        "sudo mkdir -p /usr/local/bin && sudo ln -sf \"\(toolPath)\" /usr/local/bin/vegabar"
+    }
+
+    var body: some View {
+        Section("Command line") {
+            #if APP_STORE
+            Text("To use the vegabar command in Terminal, run this once:")
+            HStack(alignment: .top) {
+                Text(linkCommand).font(.caption.monospaced()).textSelection(.enabled)
+                Spacer()
+                Button(copied ? "Copied" : "Copy") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(linkCommand, forType: .string)
+                    copied = true
+                }
+            }
+            #else
+            HStack {
+                Text("vegabar").font(.body.monospaced())
+                Spacer()
+                if installing { ProgressView().controlSize(.small) }
+                Button("Install Command-Line Tool") {
+                    installing = true
+                    Task {
+                        message = await CLIInstaller.install()
+                        installing = false
+                    }
+                }
+                .disabled(installing)
+            }
+            #endif
+            Text(message ?? "Try: vegabar status · vegabar brightness 40 · vegabar cct 5600 · vegabar preset Call")
+                .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+            Text("Without installing anything: open -g vegabar://brightness/40 in Terminal, or shortcuts run with a shortcut built from VegaBar's actions.")
+                .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+        }
     }
 }
 

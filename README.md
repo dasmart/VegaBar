@@ -59,11 +59,13 @@ vegabar identify              make the light blink
 
 It launches VegaBar if it isn't running, and the exit status tells you whether the command worked.
 
+**Scripting with nothing installed.** Two ways work in every version, including one from the Mac App Store, without the `vegabar` tool. One is a `vegabar://` URL, such as `open -g vegabar://brightness/40`. The other is macOS's built-in `shortcuts` command: build a shortcut once from VegaBar's actions, then run it with `shortcuts run "Light On"`. The Mac App Store version can't install the `vegabar` tool itself, so Preferences › General shows a one-line command to run instead.
+
 **URLs.** Anything that can open a link can control the light: `vegabar://on`, `vegabar://off`, `vegabar://toggle`, `vegabar://brightness/40`, `vegabar://brightness/+10`, `vegabar://cct/5600`, `vegabar://preset/Call`, `vegabar://preferences`, and `vegabar://about`.
 
 **Built to be safe.** Every command goes through a safety check right before it reaches the light: only the handful of commands VegaBar needs are allowed, values are held to the light's real ranges, and changes are rate-limited so nothing can strobe it — whether the request came from the menu, a script or an automation.
 
-**Private.** VegaBar makes no network connections and collects nothing. Bluetooth is used only to talk to your lights.
+**Private.** VegaBar makes no network connections and collects nothing. Bluetooth is used only to talk to your lights. See the [privacy policy](PRIVACY.md).
 
 ## Install
 
@@ -103,7 +105,7 @@ To go back to the phone app later, either unpair the light from VegaBar (the ⋯
 
 ## For developers
 
-Building, testing, how the protocol and pairing work, where data lives, the architecture, releasing and contributing: see [DEVELOPMENT.md](DEVELOPMENT.md). The wire protocol is documented in [PROTOCOL.md](PROTOCOL.md).
+Building, testing, how the protocol and pairing work, where data lives, the architecture, releasing and contributing: see [DEVELOPMENT.md](DEVELOPMENT.md). The Mac App Store build and its submission are in [APPSTORE.md](APPSTORE.md). The wire protocol is documented in [PROTOCOL.md](PROTOCOL.md).
 
 ## License
 

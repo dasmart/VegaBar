@@ -4,3 +4,4 @@ VegaBar.xcodeproj/
 xcuserdata/
 .DS_Store
 *.xcworkspace
+Configs/Team.xcconfig

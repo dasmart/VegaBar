@@ -10,7 +10,8 @@ import Network
 /// both sides trivial.
 ///
 /// Access control is the file system's: the socket lives in a directory only
-/// this user can enter (`~/Library/Application Support/VegaBar`, mode 0700)
+/// this user can enter (`~/Library/Application Support/VegaBar`, mode 0700, or
+/// in the App Store build the App Group container shared with the CLI)
 /// and is itself mode 0600, so other accounts on the Mac can't reach it. Any
 /// process running as this user can, which is the intended audience: scripts,
 /// Stream Deck, Raycast. What they can do is limited to `ControlProtocol`'s

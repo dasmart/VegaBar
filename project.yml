@@ -4,6 +4,12 @@ options:
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
+# Release: direct download and Homebrew (not sandboxed; ./build-app.sh).
+# AppStore: the Mac App Store build (sandboxed; ./build-appstore.sh).
+configs:
+  Debug: debug
+  Release: release
+  AppStore: release
 packages:
   NordicMesh:
     url: https://github.com/NordicSemiconductor/IOS-nRF-Mesh-Library.git
@@ -17,7 +23,7 @@ settings:
     ENABLE_HARDENED_RUNTIME: YES
     MACOSX_DEPLOYMENT_TARGET: "14.0"
   configs:
-    Release:
+    Release: &shipping
       # Ship a small binary: strip the symbol table (it was two thirds of the
       # file), drop unreferenced code, and favour size over speed — nothing in a
       # light controller is CPU-bound.
@@ -28,12 +34,17 @@ settings:
       DEAD_CODE_STRIPPING: YES
       SWIFT_OPTIMIZATION_LEVEL: -Osize
       GCC_OPTIMIZATION_LEVEL: s
+    AppStore: *shipping
 targets:
   VegaBar:
     type: application
     platform: macOS
+    configFiles:
+      AppStore: Configs/AppStore.xcconfig
     sources:
-      - VegaBar
+      - path: VegaBar
+        excludes:
+          - "*.entitlements"
       - Shared
       # Shown in the About window; the third-party licenses require that
       # their notices ship with the binary.
@@ -45,7 +56,9 @@ targets:
       - package: NordicMesh
       - target: VegaBarCLI
         embed: true
-        codeSign: false
+        # Re-sign on copy, keeping the tool's own entitlements (the App Store
+        # build's tool is sandboxed separately from the app).
+        codeSign: true
         copy:
           destination: wrapper
           subpath: Contents/Helpers
@@ -59,12 +72,15 @@ targets:
         NSHumanReadableCopyright: "Copyright © 2026 Archie Smart. MIT License."
         LSApplicationCategoryType: public.app-category.utilities
         NSBluetoothAlwaysUsageDescription: VegaBar uses Bluetooth to pair with and control your ZY lights.
+        NSCameraUsageDescription: VegaBar can turn your light on while a camera is in use. It only checks whether a camera is running; it never opens a camera or sees the picture.
         CFBundleURLTypes:
           - CFBundleURLName: org.dasmart.vegabar
             CFBundleURLSchemes: [vegabar]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: org.dasmart.vegabar
+        # VEGABAR_BUNDLE_SUFFIX is empty except in `./build-appstore.sh --local`,
+        # which gives its test build its own id, and so its own sandbox container.
+        PRODUCT_BUNDLE_IDENTIFIER: org.dasmart.vegabar$(VEGABAR_BUNDLE_SUFFIX)
         PRODUCT_NAME: VegaBar
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_APP_SANDBOX: NO
@@ -73,6 +89,15 @@ targets:
         SWIFT_STRICT_CONCURRENCY: complete
         # Collect UI strings into the String Catalog on each build.
         SWIFT_EMIT_LOC_STRINGS: YES
+      configs:
+        AppStore:
+          # Sandboxed, signed automatically with the team in Configs/Team.xcconfig.
+          ENABLE_APP_SANDBOX: YES
+          CODE_SIGN_ENTITLEMENTS: VegaBar/VegaBar-AppStore.entitlements
+          CODE_SIGN_STYLE: Automatic
+          CODE_SIGN_IDENTITY: Apple Development
+          # Compiles out the CLI installer (see CLISection).
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: APP_STORE
   VegaBarTests:
     type: bundle.unit-test
     platform: macOS
@@ -87,14 +112,29 @@ targets:
   VegaBarCLI:
     type: tool
     platform: macOS
+    configFiles:
+      AppStore: Configs/AppStore.xcconfig
     sources:
-      - vegabar-cli
+      - path: vegabar-cli
+        excludes:
+          - "*.entitlements"
       - Shared
     settings:
       base:
         PRODUCT_NAME: vegabar
         PRODUCT_MODULE_NAME: VegaBarCLI
-        PRODUCT_BUNDLE_IDENTIFIER: org.dasmart.vegabar.cli
+        PRODUCT_BUNDLE_IDENTIFIER: org.dasmart.vegabar.cli$(VEGABAR_BUNDLE_SUFFIX)
+      configs:
+        AppStore:
+          ENABLE_APP_SANDBOX: YES
+          CODE_SIGN_ENTITLEMENTS: vegabar-cli/vegabar-cli-AppStore.entitlements
+          CODE_SIGN_STYLE: Automatic
+          CODE_SIGN_IDENTITY: Apple Development
+          # A sandboxed command-line tool needs an embedded Info.plist so the
+          # system can identify it (its container is keyed by this bundle id).
+          CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+          GENERATE_INFOPLIST_FILE: YES
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: APP_STORE
 schemes:
   VegaBar:
     build:
