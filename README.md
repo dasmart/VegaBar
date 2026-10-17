@@ -45,7 +45,7 @@ If you try it with something else, please open an issue and say what happened, e
 
 **Shortcuts.** VegaBar's actions appear in the Shortcuts app, Siri and Spotlight: Turn Light On or Off, Set and Adjust Brightness, Set Color Temperature, Apply Preset, Get Status, Get Brightness, Get Color Temperature, and Is Light On. Wire them to Focus modes, Stream Deck buttons, or anything else that can run a Shortcut.
 
-**Command line.** Install the `vegabar` tool from Preferences › General and script the light from Terminal, cron, Raycast or Alfred:
+**Command line.** Install the `vegabar` tool from Preferences › General and script the light from Terminal, cron, Raycast or Alfred. It goes in a folder your shell already searches: Homebrew's if you have it, `~/.local/bin` or `~/bin` if those are on your PATH, and otherwise `/usr/local/bin`, which asks for your password once. The Homebrew cask installs it for you.
 
 ```text
 vegabar status                light's state (add --json for scripts)

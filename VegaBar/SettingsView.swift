@@ -58,6 +58,7 @@ struct GeneralSettings: View {
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var loginError: String?
     @State private var cliMessage: String?
+    @State private var cliInstalling = false
     /// Unsaved name edits, keyed by light, until Rename or Return commits them.
     @State private var names: [UUID: String] = [:]
 
@@ -96,7 +97,15 @@ struct GeneralSettings: View {
                 HStack {
                     Text("vegabar").font(.body.monospaced())
                     Spacer()
-                    Button("Install Command-Line Tool") { cliMessage = CLIInstaller.install() }
+                    if cliInstalling { ProgressView().controlSize(.small) }
+                    Button("Install Command-Line Tool") {
+                        cliInstalling = true
+                        Task {
+                            cliMessage = await CLIInstaller.install()
+                            cliInstalling = false
+                        }
+                    }
+                    .disabled(cliInstalling)
                 }
                 Text(cliMessage ?? "Try: vegabar status · vegabar brightness 40 · vegabar cct 5600 · vegabar preset Call")
                     .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
@@ -127,43 +136,6 @@ struct GeneralSettings: View {
         guard !name.isEmpty else { return }
         model.rename(light, to: name)
         names[light.id] = nil
-    }
-}
-
-/// Symlinks the CLI bundled in VegaBar.app onto the PATH.
-///
-/// Tries the usual bin folders in order, using the first one that is
-/// writable, and returns a message for the UI either way. Because it's a
-/// symlink, the CLI updates whenever the app does.
-enum CLIInstaller {
-    static func install() -> String {
-        let source = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/vegabar")
-        guard FileManager.default.isExecutableFile(atPath: source.path) else { return "The bundled CLI is missing from VegaBar.app." }
-        let fm = FileManager.default
-        let home = fm.homeDirectoryForCurrentUser.path
-        let candidates = ["/opt/homebrew/bin", "/usr/local/bin", "\(home)/.local/bin"]
-        for dir in candidates {
-            // Only create the folder in the user's own home; never system folders.
-            if dir.hasPrefix(home) { try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true) }
-            guard fm.isWritableFile(atPath: dir) else { continue }
-            let link = "\(dir)/vegabar"
-            // Replace an existing *link* (e.g. to an older copy of the app), but
-            // never delete a real file the user put there themselves.
-            if let attrs = try? fm.attributesOfItem(atPath: link) {
-                guard attrs[.type] as? FileAttributeType == .typeSymbolicLink else {
-                    return "\(link) already exists and isn't a symlink. Remove or rename it, then try again."
-                }
-                try? fm.removeItem(atPath: link)
-            }
-            do {
-                try fm.createSymbolicLink(atPath: link, withDestinationPath: source.path)
-                let onPath = (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":").contains { $0 == dir }
-                return "Installed \(link)" + (onPath || !dir.hasPrefix(home) ? "." : " — add \(dir) to your PATH.")
-            } catch {
-                continue
-            }
-        }
-        return "Couldn't write to \(candidates.joined(separator: ", ")). Run: ln -s \"\(source.path)\" /usr/local/bin/vegabar"
     }
 }
 
