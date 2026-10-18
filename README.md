@@ -71,21 +71,13 @@ It launches VegaBar if it isn't running, and the exit status tells you whether t
 
 **Download:** get `VegaBar.zip` from the [latest release](../../releases/latest), unzip it, and move `VegaBar.app` to your Applications folder.
 
-Releases aren't notarized yet, so macOS will refuse to open the app the first time:
-
-1. Double-click VegaBar. macOS says it can't verify the app. Click **Done**.
-2. Open **System Settings › Privacy & Security**, scroll down, and click **Open Anyway** next to the VegaBar message.
-3. Confirm, then allow Bluetooth access when asked.
-
-(Or, from Terminal: `xattr -d com.apple.quarantine /Applications/VegaBar.app`.) If you'd rather not do that, [build it yourself](DEVELOPMENT.md); a locally built app needs none of it.
+Releases are signed with a Developer ID and notarized by Apple, so VegaBar opens like any other app. Allow Bluetooth access when asked. You can also [build it yourself](DEVELOPMENT.md).
 
 **Homebrew:**
 
 ```bash
 brew install --cask dasmart/tap/vegabar
 ```
-
-The app arrives quarantined just like the download, so the same **Open Anyway** (or `xattr`) step applies the first time you open it. Homebrew no longer has a `--no-quarantine` option.
 
 ## Pairing a light
 

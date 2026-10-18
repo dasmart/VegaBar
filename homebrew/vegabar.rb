@@ -6,11 +6,12 @@
 #   brew install --cask dasmart/tap/vegabar
 #
 # After each release, update `version` and `sha256` (the release workflow
-# prints the checksum). The caveats about Gatekeeper can go once releases
-# are notarized.
+# prints the checksum, and the release notes show it). Releases are signed
+# with Developer ID and notarized, so the app opens without any Gatekeeper
+# workaround.
 cask "vegabar" do
-  version "0.3.0"
-  sha256 "37b42aff9c9a6c5d603f40ded11165df1ef380e928cff9d055889e530a059101"
+  version "0.4.0"
+  sha256 "8aa9279c3a941e023d0481089d735cd5bac0255290f89c101beec471d0a8142e"
 
   url "https://github.com/dasmart/VegaBar/releases/download/v#{version}/VegaBar.zip"
   name "VegaBar"
@@ -21,14 +22,6 @@ cask "vegabar" do
 
   app "VegaBar.app"
   binary "#{appdir}/VegaBar.app/Contents/Helpers/vegabar"
-
-  caveats <<~EOS
-    VegaBar releases are not yet notarized, so macOS will refuse to open the
-    app the first time. Open it once, click Done, then go to
-    System Settings › Privacy & Security and click Open Anyway.
-    Or, from Terminal:
-      xattr -d com.apple.quarantine "#{appdir}/VegaBar.app"
-  EOS
 
   zap trash: [
     "~/Library/Application Support/VegaBar",
