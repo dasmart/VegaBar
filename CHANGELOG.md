@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-10-19
 
 - Apple silicon only. Dropping the Intel slice and recompressing the app icon roughly halves the app's size.
 
