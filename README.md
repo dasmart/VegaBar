@@ -8,7 +8,7 @@ Control your Zhiyun light from the Mac menubar.
 
 VegaBar is a small, native macOS app for Zhiyun's Bluetooth lights — the ones the ZY Vega phone app controls. It lives in the menubar, pairs directly with the light, and gives you power, brightness and colour temperature a click, a keystroke, a Shortcut or a shell command away. No phone, no cloud, no account.
 
-I use a Zhiyun Molus G60 as a studio light in my home office, and it ticked me off that the only way to control it was to pick up my phone. There was no Mac app. So our mutual friend Claude and I decompiled the Android app, worked out the Bluetooth protocol, and built this in a few hours.
+I use a Zhiyun Molus G60 as a studio light in my home office, and it ticked me off that the only way to control it was to pick up my phone. There was no Mac app. So our mutual friend Claude and I worked out the Bluetooth protocol, and built this in a few hours.
 
 Requires macOS 14 or later on Apple silicon.
 
