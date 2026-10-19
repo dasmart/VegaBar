@@ -16,7 +16,7 @@ jobs:
         run: brew install xcodegen
       - name: Unit tests
         run: ./test.sh
-      - name: Build universal app
+      - name: Build app
         run: VEGABAR_ZIP=1 ./build-app.sh
       - name: Upload build
         uses: actions/upload-artifact@v4

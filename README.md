@@ -10,7 +10,7 @@ VegaBar is a small, native macOS app for Zhiyun's Bluetooth lights — the ones 
 
 I use a Zhiyun Molus G60 as a studio light in my home office, and it ticked me off that the only way to control it was to pick up my phone. There was no Mac app. So our mutual friend Claude and I decompiled the Android app, worked out the Bluetooth protocol, and built this in a few hours.
 
-Requires macOS 14 or later; runs on Apple silicon and maybe Intel.
+Requires macOS 14 or later on Apple silicon.
 
 > VegaBar is an independent project, not affiliated with or endorsed by Zhiyun.
 

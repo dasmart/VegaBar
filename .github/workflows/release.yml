@@ -1,6 +1,6 @@
 name: Release
 
-# Builds a universal VegaBar.app for a version tag and attaches it to a GitHub
+# Builds VegaBar.app for a version tag and attaches it to a GitHub
 # Release. Signing and notarization happen automatically when the Developer ID
 # secrets exist; without them the app is ad-hoc signed and users need
 # "Open Anyway" (documented in the README).
@@ -49,7 +49,7 @@ jobs:
           echo "VEGABAR_SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
           rm cert.p12
 
-      - name: Build universal app
+      - name: Build app
         run: VEGABAR_ZIP=1 ./build-app.sh
 
       - name: Notarize and staple

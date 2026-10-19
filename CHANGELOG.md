@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Apple silicon only. Dropping the Intel slice and recompressing the app icon roughly halves the app's size.
+
 ## 0.4.0 — 2026-10-17
 
 - Pairing no longer fails with "No GATT Proxy Node is connected" or stalls on "Reading composition…": VegaBar waits for the light to identify itself as a proxy, creates the Mac's own mesh models, and times out a configuration step that gets no usable answer.

@@ -19,6 +19,7 @@ cask "vegabar" do
   homepage "https://github.com/dasmart/VegaBar"
 
   depends_on macos: ">= :sonoma"
+  depends_on arch: :arm64
 
   app "VegaBar.app"
   binary "#{appdir}/VegaBar.app/Contents/Helpers/vegabar"

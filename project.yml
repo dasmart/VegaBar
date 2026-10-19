@@ -22,6 +22,8 @@ settings:
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: YES
     MACOSX_DEPLOYMENT_TARGET: "14.0"
+    # Apple silicon only: an Intel slice would double the binary.
+    ARCHS: arm64
   configs:
     Release: &shipping
       # Ship a small binary: strip the symbol table (it was two thirds of the

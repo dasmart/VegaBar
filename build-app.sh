@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds a universal (Apple silicon + Intel) VegaBar.app into ./build.
+# Builds an Apple silicon VegaBar.app into ./build.
 #
 # Xcode builds everything ad-hoc signed (the Swift package dependencies insist
 # on automatic signing, so a real identity can't be passed to xcodebuild), and
@@ -18,7 +18,7 @@ LOG=.build/xcodebuild.log
 mkdir -p .build
 if ! xcodebuild -project VegaBar.xcodeproj -scheme VegaBar -configuration Release \
      -derivedDataPath .build/xcode -destination 'generic/platform=macOS' \
-     ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+     ONLY_ACTIVE_ARCH=NO \
      build > "$LOG" 2>&1; then
   grep -E "error:" "$LOG" | sort -u | head -40
   echo "Build failed (full log: $LOG)"; exit 1

@@ -6,19 +6,19 @@ Everything technical that doesn't belong in the [README](README.md): building, t
 
 ```bash
 brew install xcodegen          # once
-./build-app.sh                 # universal Release build into build/
+./build-app.sh                 # Release build into build/
 ./build-appstore.sh --local    # sandboxed Mac App Store build, ad-hoc, for testing
 ./test.sh                      # unit tests
 open build/VegaBar.app
 ```
 
-`build-app.sh` generates `VegaBar.xcodeproj` from `project.yml`, builds a universal (arm64 + x86_64) Release app, signs the finished bundle as one unit and copies it to `build/`. Signing is ad-hoc unless `VEGABAR_SIGN_IDENTITY` names a certificate (a "Developer ID Application" or "Apple Development" identity, or its SHA-1 from `security find-identity -v -p codesigning`). `VEGABAR_ZIP=1` also produces `build/VegaBar.zip`.
+`build-app.sh` generates `VegaBar.xcodeproj` from `project.yml`, builds an Apple silicon (arm64) Release app, signs the finished bundle as one unit and copies it to `build/`. Signing is ad-hoc unless `VEGABAR_SIGN_IDENTITY` names a certificate (a "Developer ID Application" or "Apple Development" identity, or its SHA-1 from `security find-identity -v -p codesigning`). `VEGABAR_ZIP=1` also produces `build/VegaBar.zip`.
 
 `test.sh` runs the XCTest suite: protocol encoder and parser against reference frames and real replies, every `LightSafety` rule, URL parsing, the colour-schedule maths, storage and settings migration. The test host launches VegaBar in test mode, which skips Bluetooth, the control socket and hotkeys.
 
 To work in Xcode, run `xcodegen generate` and open the project. If the package dependency shows a red ✕, Xcode's checkout was interrupted: **File › Packages › Reset Package Caches**.
 
-Release builds are stripped and optimised for size (`-Osize`); the whole app is about 8 MB universal, of which the Nordic mesh library and its CryptoSwift dependency are most.
+Release builds are stripped and optimised for size (`-Osize`); the whole app is about 4.5 MB, of which the Nordic mesh library and its CryptoSwift dependency are most.
 
 ## How it works
 
@@ -102,7 +102,7 @@ Nothing polls. Camera use comes from CoreMediaIO property listeners (with a 30 s
 
 1. Bump `CFBundleShortVersionString` and `CFBundleVersion` in `project.yml` and add a section to `CHANGELOG.md`.
 2. Tag and push: `git tag v0.3.0 && git push --tags`.
-3. The release workflow builds a universal app, signs it, zips it and attaches it to a GitHub Release with the changelog section as notes, and prints the SHA-256 for the Homebrew cask (`homebrew/vegabar.rb`, which lives in the `dasmart/homebrew-tap` repository as `Casks/vegabar.rb`).
+3. The release workflow builds the app, signs it, zips it and attaches it to a GitHub Release with the changelog section as notes, and prints the SHA-256 for the Homebrew cask (`homebrew/vegabar.rb`, which lives in the `dasmart/homebrew-tap` repository as `Casks/vegabar.rb`).
 
 Signing and notarization happen automatically when these repository secrets exist; otherwise the build is ad-hoc signed and the release notes say so:
 

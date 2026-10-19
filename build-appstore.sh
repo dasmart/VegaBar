@@ -26,7 +26,7 @@ if [ "${1:-}" = "--local" ]; then
   LOG=.build/xcodebuild-appstore-local.log
   if ! xcodebuild -project VegaBar.xcodeproj -scheme VegaBar -configuration AppStore \
        -derivedDataPath .build/xcode-appstore -destination 'generic/platform=macOS' \
-       ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+       ONLY_ACTIVE_ARCH=NO \
        CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= \
        VEGABAR_BUNDLE_SUFFIX=.sandboxtest \
        build > "$LOG" 2>&1; then
